@@ -2,7 +2,7 @@
   "name": "Money Tracker",
   "short_name": "Money",
   "description": "Personal finance tracker — expenses, subscriptions, savings goals",
-  "start_url": "/index.html",
+  "start_url": "/Money-Management/index.html",
   "display": "standalone",
   "background_color": "#1A1A2E",
   "theme_color": "#1A1A2E",
