@@ -293,7 +293,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   <div class="bk-tap" onclick="closeModal('m-exp')"></div>
   <div class="sheet">
     <div class="sheet-top"><div class="handle"></div></div>
-    <div class="sh-hdr"><span class="sh-ttl">Add expense</span><button class="close-x" onclick="closeModal('m-exp')">✕</button></div>
+    <div class="sh-hdr"><span class="sh-ttl" id="exp-modal-title">Add expense</span><button class="close-x" onclick="closeModal('m-exp')">✕</button></div>
     <div class="ff">
       <label class="fl">Category</label>
       <div class="chips" id="cat-chips"></div>
@@ -311,7 +311,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
         <button class="pmt" data-pm="card" onclick="pickPM(this)">💳 Card</button>
       </div>
     </div>
-    <button class="btn-p" onclick="addExp()">Add expense</button>
+    <button class="btn-p" id="exp-submit-btn" onclick="addExp()">Add expense</button>
   </div>
 </div>
 
@@ -619,7 +619,7 @@ function rExp() {
     ${ex.map(e=>{
       const cat=getCat(e.cat);
       const pmCls=PM_CLS[e.pm||'upi']||'pm-upi', pmLbl=(PM_LABELS[e.pm||'upi']||'UPI');
-      return`<div class="ei"><div class="ei-ico" style="background:${cat.color}22">${cat.emoji}</div><div class="ei-info"><div class="ei-desc">${e.desc}</div><div class="ei-sub"><span class="pm ${pmCls}">${pmLbl}</span><span>${cat.name}</span></div></div><div class="ei-r"><div class="ei-amt">${fmt(e.amt)}</div><button class="del-btn" onclick="delExp(${e.id})" aria-label="Delete">✕</button></div></div>`;
+      return`<div class="ei" onclick="openEditExp(${e.id})" style="cursor:pointer"><div class="ei-ico" style="background:${cat.color}22">${cat.emoji}</div><div class="ei-info"><div class="ei-desc">${e.desc}</div><div class="ei-sub"><span class="pm ${pmCls}">${pmLbl}</span><span>${cat.name}</span></div></div><div class="ei-r"><div class="ei-amt">${fmt(e.amt)}</div><button class="del-btn" onclick="event.stopPropagation();delExp(${e.id})" aria-label="Delete">✕</button></div></div>`;
     }).join('')}
   `).join('')+`<div style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:#E8EAF6;border-top:1px solid var(--border)"><span style="font-size:12px;font-weight:600;color:var(--t2)">${exps.length} expense${exps.length!==1?'s':''} · ${filterLabel}</span><span style="font-size:16px;font-weight:700;color:var(--t1)">${fmt(total)}</span></div>`;
 }
@@ -669,16 +669,31 @@ function rGoals() {
 // ────────────────────────────────────────────────────────────────────────────
 // Actions
 // ────────────────────────────────────────────────────────────────────────────
-let curCat='', curPM='upi', curFreq='monthly';
+let curCat='', curPM='upi', curFreq='monthly', editingExpId=null;
 
 function initExpForm(){
-  curCat = S.categories[0]?.id||'';
-  const chips=document.getElementById('cat-chips');
-  chips.innerHTML=S.categories.map(c=>`<button class="chip${c.id===curCat?' on':''}" data-id="${c.id}" onclick="pickCat(this)">${c.emoji} ${c.name}</button>`).join('');
+  editingExpId=null;
+  document.getElementById('exp-modal-title').textContent='Add expense';
+  document.getElementById('exp-submit-btn').textContent='Add expense';
+  curCat=S.categories[0]?.id||''; curPM='upi';
+  document.getElementById('cat-chips').innerHTML=S.categories.map(c=>`<button class="chip${c.id===curCat?' on':''}" data-id="${c.id}" onclick="pickCat(this)">${c.emoji} ${c.name}</button>`).join('');
   document.getElementById('e-date').value=todayStr();
   document.getElementById('e-amt').value='';
   document.getElementById('e-desc').value='';
   document.querySelectorAll('.pmt').forEach(b=>{b.classList.toggle('on',b.dataset.pm===curPM)});
+}
+
+function openEditExp(id){
+  const exp=S.expenses.find(e=>e.id===id); if(!exp) return;
+  editingExpId=id; curCat=exp.cat; curPM=exp.pm||'upi';
+  document.getElementById('exp-modal-title').textContent='Edit expense';
+  document.getElementById('exp-submit-btn').textContent='Update expense';
+  document.getElementById('cat-chips').innerHTML=S.categories.map(c=>`<button class="chip${c.id===curCat?' on':''}" data-id="${c.id}" onclick="pickCat(this)">${c.emoji} ${c.name}</button>`).join('');
+  document.getElementById('e-date').value=exp.date;
+  document.getElementById('e-amt').value=exp.amt;
+  document.getElementById('e-desc').value=exp.desc;
+  document.querySelectorAll('.pmt').forEach(b=>{b.classList.toggle('on',b.dataset.pm===curPM)});
+  openModal('m-exp');
 }
 
 function pickCat(b){document.querySelectorAll('#cat-chips .chip').forEach(c=>c.classList.remove('on'));b.classList.add('on');curCat=b.dataset.id;}
@@ -688,7 +703,12 @@ function pickFreq(b){document.querySelectorAll('.fq').forEach(x=>x.classList.rem
 function addExp(){
   const d=document.getElementById('e-date').value,a=parseFloat(document.getElementById('e-amt').value),dc=document.getElementById('e-desc').value.trim();
   if(!d||!a||!dc||!curCat) return;
-  S.expenses.push({id:Date.now(),date:d,cat:curCat,desc:dc,amt:a,pm:curPM});
+  if(editingExpId){
+    S.expenses=S.expenses.map(e=>e.id===editingExpId?{...e,date:d,cat:curCat,desc:dc,amt:a,pm:curPM}:e);
+    editingExpId=null;
+  } else {
+    S.expenses.push({id:Date.now(),date:d,cat:curCat,desc:dc,amt:a,pm:curPM});
+  }
   save(); rAll(); closeModal('m-exp');
 }
 function delExp(id){S.expenses=S.expenses.filter(e=>e.id!==id);save();rAll();}
@@ -705,11 +725,12 @@ function addSub(){
 function delSub(id){S.subscriptions=S.subscriptions.filter(s=>s.id!==id);save();rAll();}
 
 function reorderSub(id,dir){
+  id=Number(id);
   const sorted=[...S.subscriptions].sort((a,b)=>(a.order||0)-(b.order||0));
   const idx=sorted.findIndex(s=>s.id===id);
   const ni=idx+dir;
   if(ni<0||ni>=sorted.length) return;
-  const tmp=sorted[idx].order; sorted[idx].order=sorted[ni].order; sorted[ni].order=tmp;
+  const tmp=sorted[idx]; sorted[idx]=sorted[ni]; sorted[ni]=tmp;
   sorted.forEach((s,i)=>s.order=i);
   S.subscriptions=sorted; save(); rSub();
 }
