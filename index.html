@@ -394,6 +394,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 
     <div style="height:16px"></div>
     <button class="btn-p" onclick="saveSettings()">Save settings</button>
+
+    <div style="height:1px;background:var(--border);margin:18px 0 14px"></div>
+    <label class="fl">Backup &amp; restore</label>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:10px;line-height:1.5">Export saves all your data as a file. Import it back anytime — even after clearing Chrome data.</p>
+    <div style="display:flex;gap:8px">
+      <button class="btn-s" style="flex:1;margin-top:0" onclick="exportData()">⬇ Export backup</button>
+      <button class="btn-s" style="flex:1;margin-top:0" onclick="document.getElementById('import-file').click()">⬆ Import backup</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)"/>
+    <div id="backup-msg" style="font-size:12px;text-align:center;margin-top:8px;min-height:18px"></div>
   </div>
 </div>
 
@@ -442,22 +452,14 @@ const DEFAULT_CATS = [
 ];
 
 const DEFAULT_STATE = {
-  income:75000, savingsTarget:15000,
+  income:72000, savingsTarget:15000,
   periodMode:true, periodStart:'2026-05-27',
   month:'May 2026', expFilter:'period',
   categories: DEFAULT_CATS,
-  expenses:[
-    {id:1,date:'2026-05-27',cat:'c1',desc:'Home contribution',amt:5000,pm:'cash'},
-    {id:2,date:'2026-05-27',cat:'c2',desc:'Groceries',amt:2400,pm:'upi'},
-    {id:3,date:'2026-05-28',cat:'c3',desc:'Metro card recharge',amt:800,pm:'upi'},
-    {id:4,date:'2026-05-28',cat:'c4',desc:'Netflix',amt:649,pm:'card'},
-    {id:5,date:'2026-05-29',cat:'c2',desc:'Lunch with team',amt:850,pm:'upi'},
-  ],
+  expenses:[],
   subscriptions:[
-    {id:1,nm:'Netflix',amt:649,ren:'2026-06-08',freq:'monthly',order:0},
-    {id:2,nm:'Spotify',amt:119,ren:'2026-06-15',freq:'monthly',order:1},
-    {id:3,nm:'Amazon Prime',amt:1499,ren:'2027-05-01',freq:'annually',order:2},
-    {id:4,nm:'Google One',amt:219,ren:'2026-06-20',freq:'monthly',order:3},
+    {id:1,nm:'Airtel WiFi + Netflix',amt:2337,ren:'2026-06-09',freq:'monthly',order:0},
+    {id:2,nm:'Spotify Premium',amt:139,ren:'2026-06-18',freq:'monthly',order:1},
   ],
   goals:[
     {id:1,nm:'MacBook Pro M4',tgt:180000,sv:35000},
@@ -845,6 +847,41 @@ function openAdd(){
 
 function open(id){ document.getElementById(id).classList.add('on'); }
 function close(id){ document.getElementById(id).classList.remove('on'); }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Backup & Restore
+// ────────────────────────────────────────────────────────────────────────────
+function exportData(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='money-tracker-backup-'+todayStr()+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showBackupMsg('✓ Backup downloaded — save it to Google Drive or WhatsApp it to yourself','var(--green)');
+}
+
+function importData(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=evt=>{
+    try{
+      const parsed=JSON.parse(evt.target.result);
+      if(!parsed.expenses||!parsed.categories) throw new Error('Invalid');
+      S=migrate(parsed); save(); rAll();
+      showBackupMsg('✓ Data restored successfully','var(--green)');
+    }catch(err){
+      showBackupMsg('✗ Invalid backup file — make sure you chose the right JSON file','#E24B4A');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+function showBackupMsg(msg,color){
+  const el=document.getElementById('backup-msg');
+  el.textContent=msg; el.style.color=color;
+  setTimeout(()=>{el.textContent='';},4000);
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Init
