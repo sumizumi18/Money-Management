@@ -320,7 +320,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   <div class="bk-tap" onclick="closeModal('m-sub')"></div>
   <div class="sheet">
     <div class="sheet-top"><div class="handle"></div></div>
-    <div class="sh-hdr"><span class="sh-ttl">Add subscription</span><button class="close-x" onclick="closeModal('m-sub')">✕</button></div>
+    <div class="sh-hdr"><span class="sh-ttl" id="sub-modal-title">Add subscription</span><button class="close-x" onclick="closeModal('m-sub')">✕</button></div>
     <div class="ff"><label class="fl">Service name</label><input class="fi" type="text" id="s-nm" placeholder="Netflix, Amazon Prime..."/></div>
     <div class="fr">
       <div class="ff"><label class="fl">Amount ₹</label><input class="fi" type="number" id="s-amt" placeholder="0" inputmode="decimal"/></div>
@@ -335,7 +335,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
         <button class="fq" data-f="annually" onclick="pickFreq(this)">Annually</button>
       </div>
     </div>
-    <button class="btn-p" onclick="addSub()">Add subscription</button>
+    <button class="btn-p" id="sub-submit-btn" onclick="addSub()">Add subscription</button>
   </div>
 </div>
 
@@ -641,7 +641,7 @@ function rSub() {
     const mo=subMoEq(s);
     const showMo=s.freq!=='monthly';
     const ren=s.ren?'Renews '+new Date(s.ren).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'';
-    return`<div class="si">
+    return`<div class="si" onclick="openEditSub(${s.id})" style="cursor:pointer">
       <div class="si-ico">🔄</div>
       <div class="si-info">
         <div class="si-nm">${s.nm} <span class="freq-pill">${FREQ_LABELS[s.freq||'monthly']}</span></div>
@@ -651,11 +651,11 @@ function rSub() {
         <div class="si-amt">${fmt(s.amt)}${s.freq==='annually'?'/yr':s.freq==='monthly'?'/mo':s.freq==='weekly'?'/wk':'/day'}</div>
         ${showMo?`<div class="si-mo">${fmt(mo)}/mo equiv.</div>`:''}
       </div>
-      <div class="ord-wrap">
+      <div class="ord-wrap" onclick="event.stopPropagation()">
         <button class="ord-btn" onclick="reorderSub(${s.id},-1)" ${idx===0?'disabled':''} aria-label="Move up">▲</button>
         <button class="ord-btn" onclick="reorderSub(${s.id},1)" ${idx===sorted.length-1?'disabled':''} aria-label="Move down">▼</button>
       </div>
-      <button class="del-btn" onclick="delSub(${s.id})" aria-label="Delete" style="margin-left:2px">✕</button>
+      <button class="del-btn" onclick="event.stopPropagation();delSub(${s.id})" aria-label="Delete" style="margin-left:2px">✕</button>
     </div>`;
   }).join('');
 }
@@ -673,7 +673,7 @@ function rGoals() {
 // ────────────────────────────────────────────────────────────────────────────
 // Actions
 // ────────────────────────────────────────────────────────────────────────────
-let curCat='', curPM='upi', curFreq='monthly', editingExpId=null;
+let curCat='', curPM='upi', curFreq='monthly', editingExpId=null, editingSubId=null;
 
 function initExpForm(){
   editingExpId=null;
@@ -717,12 +717,31 @@ function addExp(){
 }
 function delExp(id){S.expenses=S.expenses.filter(e=>e.id!==id);save();rAll();}
 
+function openEditSub(id){
+  const sub=S.subscriptions.find(s=>s.id===id); if(!sub) return;
+  editingSubId=id; curFreq=sub.freq||'monthly';
+  document.getElementById('sub-modal-title').textContent='Edit subscription';
+  document.getElementById('sub-submit-btn').textContent='Update subscription';
+  document.getElementById('s-nm').value=sub.nm;
+  document.getElementById('s-amt').value=sub.amt;
+  document.getElementById('s-ren').value=sub.ren||'';
+  document.querySelectorAll('.fq').forEach(b=>{b.classList.toggle('on',b.dataset.f===curFreq);});
+  openModal('m-sub');
+}
+
 function addSub(){
   const n=document.getElementById('s-nm').value.trim(),a=parseFloat(document.getElementById('s-amt').value),r=document.getElementById('s-ren').value;
   if(!n||!a) return;
-  const maxOrd=S.subscriptions.reduce((m,x)=>Math.max(m,x.order||0),-1);
-  S.subscriptions.push({id:Date.now(),nm:n,amt:a,ren:r,freq:curFreq,order:maxOrd+1});
+  if(editingSubId){
+    S.subscriptions=S.subscriptions.map(s=>s.id===editingSubId?{...s,nm:n,amt:a,ren:r,freq:curFreq}:s);
+    editingSubId=null;
+  } else {
+    const maxOrd=S.subscriptions.reduce((m,x)=>Math.max(m,x.order||0),-1);
+    S.subscriptions.push({id:Date.now(),nm:n,amt:a,ren:r,freq:curFreq,order:maxOrd+1});
+  }
   save(); rAll(); closeModal('m-sub');
+  document.getElementById('sub-modal-title').textContent='Add subscription';
+  document.getElementById('sub-submit-btn').textContent='Add subscription';
   document.getElementById('s-nm').value=''; document.getElementById('s-amt').value=''; document.getElementById('s-ren').value='';
   document.querySelectorAll('.fq').forEach(b=>{b.classList.toggle('on',b.dataset.f==='monthly');}); curFreq='monthly';
 }
@@ -867,7 +886,14 @@ function go(t){
 
 function openAdd(){
   if(cur==='exp'){ initExpForm(); openModal('m-exp'); }
-  else if(cur==='sub') openModal('m-sub');
+  else if(cur==='sub'){
+    editingSubId=null;
+    document.getElementById('sub-modal-title').textContent='Add subscription';
+    document.getElementById('sub-submit-btn').textContent='Add subscription';
+    document.getElementById('s-nm').value=''; document.getElementById('s-amt').value=''; document.getElementById('s-ren').value='';
+    document.querySelectorAll('.fq').forEach(b=>{b.classList.toggle('on',b.dataset.f==='monthly');}); curFreq='monthly';
+    openModal('m-sub');
+  }
   else if(cur==='sav') openModal('m-goal');
 }
 
