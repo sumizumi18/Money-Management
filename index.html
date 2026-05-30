@@ -290,10 +290,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 
 <!-- Add Expense -->
 <div class="backdrop" id="m-exp">
-  <div class="bk-tap" onclick="close('m-exp')"></div>
+  <div class="bk-tap" onclick="closeModal('m-exp')"></div>
   <div class="sheet">
     <div class="sheet-top"><div class="handle"></div></div>
-    <div class="sh-hdr"><span class="sh-ttl">Add expense</span><button class="close-x" onclick="close('m-exp')">✕</button></div>
+    <div class="sh-hdr"><span class="sh-ttl">Add expense</span><button class="close-x" onclick="closeModal('m-exp')">✕</button></div>
     <div class="ff">
       <label class="fl">Category</label>
       <div class="chips" id="cat-chips"></div>
@@ -317,10 +317,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 
 <!-- Add Subscription -->
 <div class="backdrop" id="m-sub">
-  <div class="bk-tap" onclick="close('m-sub')"></div>
+  <div class="bk-tap" onclick="closeModal('m-sub')"></div>
   <div class="sheet">
     <div class="sheet-top"><div class="handle"></div></div>
-    <div class="sh-hdr"><span class="sh-ttl">Add subscription</span><button class="close-x" onclick="close('m-sub')">✕</button></div>
+    <div class="sh-hdr"><span class="sh-ttl">Add subscription</span><button class="close-x" onclick="closeModal('m-sub')">✕</button></div>
     <div class="ff"><label class="fl">Service name</label><input class="fi" type="text" id="s-nm" placeholder="Netflix, Amazon Prime..."/></div>
     <div class="fr">
       <div class="ff"><label class="fl">Amount ₹</label><input class="fi" type="number" id="s-amt" placeholder="0" inputmode="decimal"/></div>
@@ -341,10 +341,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 
 <!-- Add Goal -->
 <div class="backdrop" id="m-goal">
-  <div class="bk-tap" onclick="close('m-goal')"></div>
+  <div class="bk-tap" onclick="closeModal('m-goal')"></div>
   <div class="sheet">
     <div class="sheet-top"><div class="handle"></div></div>
-    <div class="sh-hdr"><span class="sh-ttl">New savings goal</span><button class="close-x" onclick="close('m-goal')">✕</button></div>
+    <div class="sh-hdr"><span class="sh-ttl">New savings goal</span><button class="close-x" onclick="closeModal('m-goal')">✕</button></div>
     <div class="ff"><label class="fl">Goal name</label><input class="fi" type="text" id="g-nm" placeholder="MacBook Pro, Road bike..."/></div>
     <div class="fr">
       <div class="ff"><label class="fl">Target ₹</label><input class="fi" type="number" id="g-tgt" placeholder="0" inputmode="decimal"/></div>
@@ -356,10 +356,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 
 <!-- Settings -->
 <div class="backdrop" id="m-set">
-  <div class="bk-tap" onclick="close('m-set')"></div>
+  <div class="bk-tap" onclick="closeModal('m-set')"></div>
   <div class="sheet">
     <div class="sheet-top"><div class="handle"></div></div>
-    <div class="sh-hdr"><span class="sh-ttl">Settings</span><button class="close-x" onclick="close('m-set')">✕</button></div>
+    <div class="sh-hdr"><span class="sh-ttl">Settings</span><button class="close-x" onclick="closeModal('m-set')">✕</button></div>
 
     <!-- Income & target -->
     <div class="fr" style="margin-bottom:4px">
@@ -409,26 +409,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 
 <!-- Period menu (picker from header) -->
 <div class="backdrop" id="m-period">
-  <div class="bk-tap" onclick="close('m-period')"></div>
+  <div class="bk-tap" onclick="closeModal('m-period')"></div>
   <div class="sheet">
     <div class="sheet-top"><div class="handle"></div></div>
-    <div class="sh-hdr"><span class="sh-ttl">Select view</span><button class="close-x" onclick="close('m-period')">✕</button></div>
+    <div class="sh-hdr"><span class="sh-ttl">Select view</span><button class="close-x" onclick="closeModal('m-period')">✕</button></div>
     <div id="period-opts"></div>
   </div>
 </div>
 
 <!-- New period confirm -->
 <div class="backdrop" id="m-newperiod">
-  <div class="bk-tap" onclick="close('m-newperiod')"></div>
+  <div class="bk-tap" onclick="closeModal('m-newperiod')"></div>
   <div class="sheet">
     <div class="sheet-top"><div class="handle"></div></div>
-    <div class="sh-hdr"><span></span><button class="close-x" onclick="close('m-newperiod')">✕</button></div>
+    <div class="sh-hdr"><span></span><button class="close-x" onclick="closeModal('m-newperiod')">✕</button></div>
     <div class="confirm-body">
       <div class="confirm-ico">💰</div>
       <div class="confirm-ttl">Start new pay period</div>
       <div class="confirm-txt">This will mark today as your new period start date.<br>Your expense history is always preserved.</div>
       <button class="btn-p" onclick="confirmNewPeriod()">Yes — got paid today</button>
-      <button class="btn-s" onclick="close('m-newperiod')">Cancel</button>
+      <button class="btn-s" onclick="closeModal('m-newperiod')">Cancel</button>
     </div>
   </div>
 </div>
@@ -461,11 +461,7 @@ const DEFAULT_STATE = {
     {id:1,nm:'Airtel WiFi + Netflix',amt:2337,ren:'2026-06-09',freq:'monthly',order:0},
     {id:2,nm:'Spotify Premium',amt:139,ren:'2026-06-18',freq:'monthly',order:1},
   ],
-  goals:[
-    {id:1,nm:'MacBook Pro M4',tgt:180000,sv:35000},
-    {id:2,nm:'Road bike',tgt:40000,sv:8000},
-    {id:3,nm:'iPhone Pro Max',tgt:130000,sv:0},
-  ]
+  goals:[]
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -688,7 +684,7 @@ function addExp(){
   const d=document.getElementById('e-date').value,a=parseFloat(document.getElementById('e-amt').value),dc=document.getElementById('e-desc').value.trim();
   if(!d||!a||!dc||!curCat) return;
   S.expenses.push({id:Date.now(),date:d,cat:curCat,desc:dc,amt:a,pm:curPM});
-  save(); rAll(); close('m-exp');
+  save(); rAll(); closeModal('m-exp');
 }
 function delExp(id){S.expenses=S.expenses.filter(e=>e.id!==id);save();rAll();}
 
@@ -697,7 +693,7 @@ function addSub(){
   if(!n||!a) return;
   const maxOrd=S.subscriptions.reduce((m,x)=>Math.max(m,x.order||0),-1);
   S.subscriptions.push({id:Date.now(),nm:n,amt:a,ren:r,freq:curFreq,order:maxOrd+1});
-  save(); rAll(); close('m-sub');
+  save(); rAll(); closeModal('m-sub');
   document.getElementById('s-nm').value=''; document.getElementById('s-amt').value=''; document.getElementById('s-ren').value='';
   document.querySelectorAll('.fq').forEach(b=>{b.classList.toggle('on',b.dataset.f==='monthly');}); curFreq='monthly';
 }
@@ -717,7 +713,7 @@ function addGoal(){
   const n=document.getElementById('g-nm').value.trim(),t=parseFloat(document.getElementById('g-tgt').value)||0,s=parseFloat(document.getElementById('g-sv').value)||0;
   if(!n||!t) return;
   S.goals.push({id:Date.now(),nm:n,tgt:t,sv:s});
-  save(); rAll(); close('m-goal');
+  save(); rAll(); closeModal('m-goal');
   document.getElementById('g-nm').value=''; document.getElementById('g-tgt').value=''; document.getElementById('g-sv').value='';
 }
 function delGoal(id){S.goals=S.goals.filter(g=>g.id!==id);save();rGoals();}
@@ -736,7 +732,7 @@ function openSettings(){
   document.getElementById('period-settings').style.display=S.periodMode?'':'none';
   document.getElementById('month-settings').style.display=S.periodMode?'none':'';
   renderCatEditor();
-  open('m-set');
+  openModal('m-set');
 }
 
 function setSegment(mode){
@@ -769,7 +765,7 @@ function saveSettings(){
     const color=selCol?selCol.dataset.color:(S.categories.find(c=>c.id===id)?.color||PRESET_COLORS[0]);
     return {id,name,emoji,color,budget};
   }).filter(c=>c.name);
-  save(); rAll(); close('m-set');
+  save(); rAll(); closeModal('m-set');
 }
 
 // Category editor in settings
@@ -808,19 +804,19 @@ function openPeriodMenu(){
   const months=[];
   for(let i=11;i>=-5;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(mStr(d));}
   opts.innerHTML=`
-    ${S.periodMode?`<button class="mo-opt${S.expFilter==='period'?' on':''}" onclick="setFilter('period');close('m-period')">📅 Current period (since ${fmtShort(S.periodStart)})</button>`:''}
-    <button class="mo-opt${S.expFilter==='all'?' on':''}" onclick="setFilter('all');close('m-period')">All time</button>
+    ${S.periodMode?`<button class="mo-opt${S.expFilter==='period'?' on':''}" onclick="setFilter('period');closeModal('m-period')">📅 Current period (since ${fmtShort(S.periodStart)})</button>`:''}
+    <button class="mo-opt${S.expFilter==='all'?' on':''}" onclick="setFilter('all');closeModal('m-period')">All time</button>
     <div style="font-size:11px;font-weight:600;color:var(--t3);padding:12px 0 6px;text-transform:uppercase;letter-spacing:.4px">By calendar month</div>
-    ${months.map(m=>`<button class="mo-opt${S.expFilter===m?' on':''}" onclick="setFilter('${m}');close('m-period')">${m}</button>`).join('')}
+    ${months.map(m=>`<button class="mo-opt${S.expFilter===m?' on':''}" onclick="setFilter('${m}');closeModal('m-period')">${m}</button>`).join('')}
   `;
-  open('m-period');
+  openModal('m-period');
 }
 
-function openNewPeriod(){ open('m-newperiod'); }
+function openNewPeriod(){ openModal('m-newperiod'); }
 function confirmNewPeriod(){
   S.periodStart=todayStr();
   S.expFilter='period';
-  save(); rAll(); close('m-newperiod');
+  save(); rAll(); closeModal('m-newperiod');
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -840,13 +836,13 @@ function go(t){
 }
 
 function openAdd(){
-  if(cur==='exp'){ initExpForm(); open('m-exp'); }
-  else if(cur==='sub') open('m-sub');
-  else if(cur==='sav') open('m-goal');
+  if(cur==='exp'){ initExpForm(); openModal('m-exp'); }
+  else if(cur==='sub') openModal('m-sub');
+  else if(cur==='sav') openModal('m-goal');
 }
 
-function open(id){ document.getElementById(id).classList.add('on'); }
-function close(id){ document.getElementById(id).classList.remove('on'); }
+function openModal(id){ document.getElementById(id).classList.add('on'); }
+function closeModal(id){ document.getElementById(id).classList.remove('on'); }
 
 // ────────────────────────────────────────────────────────────────────────────
 // Backup & Restore
