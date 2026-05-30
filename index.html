@@ -106,7 +106,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .si-amt{font-size:14px;font-weight:600;color:var(--purple)}
 .si-mo{font-size:10px;color:var(--t3)}
 .ord-wrap{display:flex;flex-direction:column;gap:2px;margin-left:4px}
-.ord-btn{background:var(--bg);border:1px solid var(--border);border-radius:5px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--t2)}
+.ord-btn{background:var(--bg);border:1px solid var(--border);border-radius:7px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--t2)}.ord-btn:disabled{opacity:.3;cursor:default}
 .freq-pill{font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;background:#EDE7F6;color:var(--purple);text-transform:capitalize}
 
 /* ── Savings ── */
@@ -588,8 +588,11 @@ function rOv() {
 }
 
 function rFilterBar() {
-  const months=[], now=new Date();
-  for(let i=11;i>=-5;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(mStr(d));}
+  const months=[];
+  const start=new Date(2026,3,1); // April 2026
+  const end=new Date(new Date().getFullYear(),new Date().getMonth()+5,1);
+  let d=new Date(start);
+  while(d<=end){months.push(mStr(d));d=new Date(d.getFullYear(),d.getMonth()+1,1);}
   const filters=[
     ...(S.periodMode?[{id:'period',lbl:'This period'}]:[]),
     {id:'all',lbl:'All time'},
@@ -609,6 +612,8 @@ function rExp() {
     const d=new Date(e.date).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
     (grp[d]=grp[d]||[]).push(e);
   });
+  const total=exps.reduce((s,e)=>s+e.amt,0);
+  const filterLabel=S.expFilter==='period'?'this period':S.expFilter==='all'?'all time':S.expFilter;
   el.innerHTML=Object.entries(grp).map(([d,ex])=>`
     <div class="eg-date">${d}</div>
     ${ex.map(e=>{
@@ -616,7 +621,7 @@ function rExp() {
       const pmCls=PM_CLS[e.pm||'upi']||'pm-upi', pmLbl=(PM_LABELS[e.pm||'upi']||'UPI');
       return`<div class="ei"><div class="ei-ico" style="background:${cat.color}22">${cat.emoji}</div><div class="ei-info"><div class="ei-desc">${e.desc}</div><div class="ei-sub"><span class="pm ${pmCls}">${pmLbl}</span><span>${cat.name}</span></div></div><div class="ei-r"><div class="ei-amt">${fmt(e.amt)}</div><button class="del-btn" onclick="delExp(${e.id})" aria-label="Delete">✕</button></div></div>`;
     }).join('')}
-  `).join('');
+  `).join('')+`<div style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:#E8EAF6;border-top:1px solid var(--border)"><span style="font-size:12px;font-weight:600;color:var(--t2)">${exps.length} expense${exps.length!==1?'s':''} · ${filterLabel}</span><span style="font-size:16px;font-weight:700;color:var(--t1)">${fmt(total)}</span></div>`;
 }
 
 function rSub() {
