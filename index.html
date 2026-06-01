@@ -748,6 +748,27 @@ function rSub() {
   }).join('');
 }
 
+function depositCard(g,matLabel,countdown,urgency){
+  var gid=String(g.id);
+  var notesHtml=g.notes?'<div class="deposit-meta">'+g.notes+'</div>':'';
+  var balHtml=g.bal>0?fmt(g.bal):'Balance not set';
+  var qadd=g.bal>0
+    ?('<div class="qadd" style="margin-top:10px">'
+      +'<button class="qa" onclick="bumpDep(\''+gid+'\',1000)">+₹1k</button>'
+      +'<button class="qa" onclick="bumpDep(\''+gid+'\',5000)">+₹5k</button>'
+      +'<button class="qa" onclick="bumpDep(\''+gid+'\',10000)">+₹10k</button>'
+      +'<button class="qa" onclick="bumpDep(\''+gid+'\',25000)">+₹25k</button></div>')
+    :('<div class="qadd" style="margin-top:8px">'
+      +'<button class="qa" onclick="setDepBal(\''+gid+'\')">Set balance</button></div>');
+  return '<div class="deposit-card">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+    +'<div><div class="deposit-nm">🏦 '+g.nm+'</div>'+notesHtml+'</div>'
+    +'<button class="del-btn" onclick="delGoal(\''+gid+'\')">✕</button></div>'
+    +'<div class="deposit-bal">'+balHtml+'</div>'
+    +'<div class="deposit-mat" style="color:'+urgency+'">📅 Matures '+matLabel+countdown+'</div>'
+    +qadd+'</div>';
+}
+
 function daysUntil(dateStr){
   if(!dateStr) return null;
   const diff=new Date(dateStr)-new Date();
@@ -761,9 +782,9 @@ function rSavings() {
     if(g.type==='deposit'){
       const days=daysUntil(g.mat);
       const matLabel=g.mat?new Date(g.mat).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'No maturity date';
-      const countdown=days===null?'':days<0?'Matured':days===0?'Matures today':''+days+' days to maturity';
+      const countdown=days===null?'':days<0?' · Matured':days===0?' · Matures today':' · '+days+' days left';
       const urgency=days!==null&&days<=90?'var(--coral)':days!==null&&days<=180?'var(--amber)':'var(--green)';
-      return`<div class="deposit-card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="deposit-nm">🏦 ${g.nm}</div>${g.notes?`<div class="deposit-meta">${g.notes}</div>`:''}</div><button class="del-btn" onclick="delGoal('${g.id}')">✕</button></div><div class="deposit-bal">${g.bal>0?fmt(g.bal):'Balance not set'}</div><div class="deposit-mat" style="color:${urgency}">📅 Matures ${matLabel}${countdown?' · '+countdown:''}</div>${g.bal>0?`<div class="qadd" style="margin-top:10px"><button class="qa" onclick="bumpDep('${g.id}',1000)">+₹1k</button><button class="qa" onclick="bumpDep('${g.id}',5000)">+₹5k</button><button class="qa" onclick="bumpDep('${g.id}',10000)">+₹10k</button><button class="qa" onclick="bumpDep('${g.id}',25000)">+₹25k</button></div>`:'<div class="qadd" style="margin-top:8px"><button class="qa" onclick="setDepBal(''+g.id+'')">Set balance</button></div>'}</div>`;
+      return depositCard(g,matLabel,countdown,urgency);
     }
     const p=g.tgt>0?Math.min(100,Math.round(g.sv/g.tgt*100)):0,done=p>=100;
     const rem=Math.max(0,g.tgt-g.sv),mo=S.savingsTarget>0?Math.ceil(rem/S.savingsTarget):'—';
