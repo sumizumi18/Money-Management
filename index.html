@@ -191,6 +191,53 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .stype.on{border-color:var(--green);background:#F0FAF3;color:var(--green);font-weight:600}
 .total-subs-note{font-size:11px;color:var(--purple);margin-top:3px}
 
+
+/* Tags */
+.tag{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;margin-right:3px;margin-top:2px}
+.tag-work{background:#EEF4FF;color:#4A7CB5}
+.tag-social{background:#FFF3EE;color:#D4785A}
+.tag-essential{background:#F0FAF3;color:#5B9B7A}
+.tag-oneoff{background:#F5F0FF;color:#8B6BC8}
+.tag-health{background:#FFF8E8;color:#E59A1A}
+.tag-travel{background:#EFF9FF;color:#2E8BBF}
+.ei-notes{font-size:10px;color:var(--t3);margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.tag-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.tchip{padding:6px 11px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;cursor:pointer;background:none;color:var(--t2);font-weight:500}
+.tchip.on{font-weight:600}
+.tchip-work.on{border-color:#4A7CB5;background:#EEF4FF;color:#4A7CB5}
+.tchip-social.on{border-color:#D4785A;background:#FFF3EE;color:#D4785A}
+.tchip-essential.on{border-color:#5B9B7A;background:#F0FAF3;color:#5B9B7A}
+.tchip-oneoff.on{border-color:#8B6BC8;background:#F5F0FF;color:#8B6BC8}
+.tchip-health.on{border-color:#E59A1A;background:#FFF8E8;color:#E59A1A}
+.tchip-travel.on{border-color:#2E8BBF;background:#EFF9FF;color:#2E8BBF}
+
+/* Budget chart */
+.chart-row{margin-bottom:10px}
+.chart-lbl{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.chart-nm{font-size:12px;font-weight:500;color:var(--t1)}
+.chart-vals{font-size:11px;color:var(--t3)}
+.chart-track{height:8px;background:#E8EAF6;border-radius:4px;overflow:hidden;position:relative}
+.chart-fill{height:100%;border-radius:4px;transition:width .4s}
+.chart-over{background:#E24B4A !important}
+
+/* History */
+.hist-card{background:var(--surface);border-radius:12px;padding:14px;margin:0 14px 10px;box-shadow:var(--sh);cursor:pointer}
+.hist-card:active{opacity:.85}
+.hist-dates{font-size:11px;color:var(--t3);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.3px}
+.hist-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.hist-label{font-size:12px;color:var(--t2)}
+.hist-val{font-size:13px;font-weight:600}
+.hist-rate{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-top:6px;display:inline-block}
+.hist-rate.g{background:#F0FAF3;color:#5B9B7A}
+.hist-rate.r{background:#FFF0F0;color:#E24B4A}
+
+/* Gist */
+.gist-status{font-size:11px;margin-top:6px;min-height:16px}
+.gist-ok{color:var(--green)}.gist-err{color:#E24B4A}
+
+/* Got paid modal */
+.confirm-body .fi{margin:12px 0 4px;text-align:left}
+
 .new-period-btn{width:100%;padding:12px;background:rgba(134,239,172,.12);color:var(--green);border:1.5px solid rgba(134,239,172,.3);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
 
 /* ── Month picker ── */
@@ -255,6 +302,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       <div class="card" style="padding:6px 16px" id="ov-cats"><div class="empty">No expenses this period yet</div></div>
     </div>
     </div><!-- /ov-main-cats -->
+    <div class="sec" style="margin-top:14px" id="ov-chart-sec">
+      <div class="sec-ttl">Budget vs actual</div>
+      <div class="card" id="ov-chart"><div class="empty" style="padding:20px">No data yet</div></div>
+    </div>
+    <div class="sec" style="margin-top:14px" id="ov-hist-sec">
+      <div class="sec-ttl">Past periods</div>
+      <div id="ov-hist"><div class="empty" style="padding:20px">No past periods yet</div></div>
+    </div>
     <div class="sec" style="margin-top:14px;margin-bottom:16px">
       <div class="sec-ttl">Subscriptions</div>
       <div id="ov-subs-drill" style="display:none">
@@ -341,6 +396,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       <div class="ff"><label class="fl">Amount ₹</label><input class="fi" type="number" id="e-amt" placeholder="0" inputmode="decimal"/></div>
     </div>
     <div class="ff"><label class="fl">Description</label><input class="fi" type="text" id="e-desc" placeholder="e.g. Groceries, Uber..."/></div>
+    <div class="ff"><label class="fl">Tags <span style="font-weight:400;color:var(--t3)">(optional)</span></label>
+      <div class="tag-chips">
+        <button class="tchip tchip-work" data-tag="work" onclick="toggleTag(this)">💼 Work</button>
+        <button class="tchip tchip-social" data-tag="social" onclick="toggleTag(this)">🎉 Social</button>
+        <button class="tchip tchip-essential" data-tag="essential" onclick="toggleTag(this)">✅ Essential</button>
+        <button class="tchip tchip-oneoff" data-tag="oneoff" onclick="toggleTag(this)">⚡ One-off</button>
+        <button class="tchip tchip-health" data-tag="health" onclick="toggleTag(this)">🏥 Health</button>
+        <button class="tchip tchip-travel" data-tag="travel" onclick="toggleTag(this)">✈ Travel</button>
+      </div>
+    </div>
+    <div class="ff"><label class="fl">Notes <span style="font-weight:400;color:var(--t3)">(optional)</span></label><input class="fi" type="text" id="e-notes" placeholder="Any extra detail..."/></div>
     <div class="ff">
       <label class="fl">Payment method</label>
       <div class="pm-toggle">
@@ -466,6 +532,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     </div>
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)"/>
     <div id="backup-msg" style="font-size:12px;text-align:center;margin-top:8px;min-height:18px"></div>
+    <div style="height:1px;background:var(--border);margin:14px 0 12px"></div>
+    <label class="fl">Auto-backup to GitHub Gist</label>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:10px;line-height:1.5">Paste a GitHub personal access token (with Gist scope) — your data will auto-save to a private Gist on every change. Safe, free, recoverable on any device.</p>
+    <div class="ff"><label class="fl">Personal access token</label><input class="fi" type="password" id="st-gist-token" placeholder="ghp_xxxxxxxxxxxx"/></div>
+    <div class="ff"><label class="fl">Gist ID <span style="font-weight:400;color:var(--t3)">(auto-filled after first save)</span></label><input class="fi" type="text" id="st-gist-id" placeholder="Leave blank for new Gist"/></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn-s" style="flex:1;margin-top:0" onclick="testGist()">Test connection</button>
+      <button class="btn-s" style="flex:1;margin-top:0" onclick="restoreFromGist()">↺ Restore from Gist</button>
+    </div>
+    <div class="gist-status" id="gist-status"></div>
   </div>
 </div>
 
@@ -487,9 +563,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     <div class="sh-hdr"><span></span><button class="close-x" onclick="closeModal('m-newperiod')">✕</button></div>
     <div class="confirm-body">
       <div class="confirm-ico">💰</div>
-      <div class="confirm-ttl">Start new pay period</div>
-      <div class="confirm-txt">This will mark today as your new period start date.<br>Your expense history is always preserved.</div>
-      <button class="btn-p" onclick="confirmNewPeriod()">Yes — got paid today</button>
+      <div class="confirm-ttl">Got paid!</div>
+      <div class="confirm-txt">How much was credited this month?</div>
+      <input class="fi" type="number" id="newperiod-income" inputmode="decimal" placeholder="Amount credited ₹" style="margin:12px 0 4px;text-align:left"/>
+      <div style="font-size:11px;color:var(--t3);margin-bottom:12px">Leave blank to use your default income (₹<span id="newperiod-default"></span>)</div>
+      <button class="btn-p" onclick="confirmNewPeriod()">Start new period</button>
       <button class="btn-s" onclick="closeModal('m-newperiod')">Cancel</button>
     </div>
   </div>
@@ -514,7 +592,9 @@ const DEFAULT_CATS = [
 ];
 
 const DEFAULT_STATE = {
-  income:72000, savingsTarget:25000,
+  income:72000, savingsTarget:25000, currentPeriodIncome:72000,
+  gistToken:'', gistId:'',
+  periods:[],
   periodMode:true, periodStart:'2026-05-27',
   month:'May 2026', expFilter:'period',
   categories:[
@@ -546,7 +626,14 @@ const DEFAULT_STATE = {
 // ────────────────────────────────────────────────────────────────────────────
 function migrate(old) {
   if (!old) return {...DEFAULT_STATE};
-  if (old.categories && old.subscriptions && old.periodMode !== undefined) return old;
+  if (old.categories && old.subscriptions && old.periodMode !== undefined) {
+    // Ensure new fields exist
+    if (!old.periods) old.periods=[];
+    if (!old.currentPeriodIncome) old.currentPeriodIncome=old.income||72000;
+    if (!old.gistToken) old.gistToken='';
+    if (!old.gistId) old.gistId='';
+    return old;
+  }
 
   const OLD_CATS = ['Rent & utilities','Food & eating out','Transport','Subscriptions','Shopping','Other'];
   const OLD_COL  = ['#4A7CB5','#D4785A','#5B9B7A','#8B6BC8','#C8916B','#888780'];
@@ -570,6 +657,8 @@ function migrate(old) {
     periodMode:true, periodStart:old.periodStart||'2026-05-27',
     month:old.month||'May 2026', expFilter:'period',
     categories, expenses, subscriptions, goals:(old.goals||[]).map(g=>({type:'goal',...g})),
+    periods:old.periods||[], currentPeriodIncome:old.currentPeriodIncome||old.income||72000,
+    gistToken:old.gistToken||'', gistId:old.gistId||'',
   };
 }
 
@@ -580,7 +669,10 @@ let S;
 try { S = migrate(JSON.parse(localStorage.getItem('mt')||'null')); }
 catch(e) { S = {...DEFAULT_STATE}; }
 
-function save() { localStorage.setItem('mt', JSON.stringify(S)); }
+function save() {
+  localStorage.setItem('mt', JSON.stringify(S));
+  if(S.gistToken) autoSaveToGist(S);
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -612,7 +704,10 @@ function filteredExpenses() {
   let exps;
   if(f==='period' && S.periodMode) exps = S.expenses.filter(e=>e.date>=S.periodStart);
   else if(f==='all') exps = [...S.expenses];
-  else exps = S.expenses.filter(e=>mStr(e.date)===f);
+  else if(f&&f.includes('|')){
+    const [s,e]=f.split('|');
+    exps=S.expenses.filter(x=>x.date>=s&&x.date<e);
+  } else exps = S.expenses.filter(e=>mStr(e.date)===f);
   return exps.sort((a,b)=>b.date.localeCompare(a.date));
 }
 
@@ -624,15 +719,146 @@ function periodLabel() {
 // ────────────────────────────────────────────────────────────────────────────
 // Render
 // ────────────────────────────────────────────────────────────────────────────
+
+// ── Tag helpers ──────────────────────────────────────────────────────────────
+let curTags=new Set();
+function toggleTag(b){
+  const t=b.dataset.tag;
+  if(curTags.has(t)){curTags.delete(t);b.classList.remove('on');}
+  else{curTags.add(t);b.classList.add('on');}
+}
+
+// ── Budget vs Actual chart ────────────────────────────────────────────────────
+function rBudgetChart(ct, de){
+  const el=document.getElementById('ov-chart'); if(!el) return;
+  const sMo=subsMoTotal();
+  const rows=S.categories.filter(cat=>cat.budget>0||ct[cat.id]>0);
+  if(!rows.length&&sMo===0){el.innerHTML='<div class="empty" style="padding:20px">Set budgets in Settings</div>';return;}
+  let html='';
+  rows.forEach(cat=>{
+    const sp=ct[cat.id]||0, bg=cat.budget||0, pct=bg>0?Math.min(110,Math.round(sp/bg*100)):0;
+    const over=sp>bg&&bg>0;
+    html+='<div class="chart-row">'
+      +'<div class="chart-lbl"><span class="chart-nm">'+cat.emoji+' '+cat.name+'</span>'
+      +'<span class="chart-vals">'+fmt(sp)+(bg?' / '+fmt(bg):'')+'</span></div>'
+      +'<div class="chart-track"><div class="chart-fill'+(over?' chart-over':'')+'" style="width:'+pct+'%;background:'+(over?'#E24B4A':cat.color)+'"></div></div>'
+      +'</div>';
+  });
+  // Subs row
+  const subsBg=S.categories.find(c=>c.id==='c4')?.budget||0;
+  const subsPct=subsBg>0?Math.min(110,Math.round(sMo/subsBg*100)):0;
+  html+='<div class="chart-row">'
+    +'<div class="chart-lbl"><span class="chart-nm">🔄 Subscriptions</span>'
+    +'<span class="chart-vals">'+fmt(sMo)+(subsBg?' / '+fmt(subsBg):'')+'</span></div>'
+    +'<div class="chart-track"><div class="chart-fill" style="width:'+subsPct+'%;background:#8B6BC8"></div></div>'
+    +'</div>';
+  el.innerHTML='<div style="padding:12px 14px">'+html+'</div>';
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+function periodExpenses(start, end){
+  return S.expenses.filter(e=>e.date>=start&&(!end||e.date<end));
+}
+
+function rHistory(){
+  const el=document.getElementById('ov-hist'); if(!el) return;
+  if(!S.periods||!S.periods.length){
+    el.innerHTML='<div class="empty" style="padding:20px">No past periods yet.<br>Tap "Got paid" to start tracking.</div>';
+    return;
+  }
+  const sorted=[...S.periods].sort((a,b)=>b.start.localeCompare(a.start));
+  el.innerHTML=sorted.map(p=>{
+    const exps=periodExpenses(p.start,p.end);
+    const sMo=subsMoTotal();
+    const spent=exps.reduce((s,e)=>s+e.amt,0)+sMo;
+    const saved=Math.max(0,p.income-spent);
+    const rate=p.income>0?Math.round(saved/p.income*100):0;
+    const startLbl=new Date(p.start).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    const endLbl=new Date(p.end).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+    return '<div class="hist-card" onclick="viewPeriodHistory(\"'+p.start+'\",\"'+p.end+'\")">' 
+      +'<div class="hist-dates">'+startLbl+' → '+endLbl+'</div>'
+      +'<div class="hist-row"><span class="hist-label">Income credited</span><span class="hist-val">'+fmt(p.income)+'</span></div>'
+      +'<div class="hist-row"><span class="hist-label">Total spent</span><span class="hist-val" style="color:var(--coral)">'+fmt(spent)+'</span></div>'
+      +'<div class="hist-row"><span class="hist-label">Saved</span><span class="hist-val" style="color:var(--green)">'+fmt(saved)+'</span></div>'
+      +'<span class="hist-rate '+(rate>=30?'g':rate>=15?'g':'r')+'">'+rate+'% saved</span>'
+      +'</div>';
+  }).join('');
+}
+
+function viewPeriodHistory(start, end){
+  // Open expenses filtered to this period
+  drillCat=null;
+  document.getElementById('ov-drill-wrap').style.display='none';
+  document.getElementById('ov-main-cats').style.display='';
+  S.expFilter=start+'|'+end;
+  go('exp');
+}
+
+// ── GitHub Gist backup ────────────────────────────────────────────────────────
+let gistSaveTimer=null;
+async function autoSaveToGist(data){
+  clearTimeout(gistSaveTimer);
+  gistSaveTimer=setTimeout(async()=>{
+    if(!data.gistToken) return;
+    try{
+      const body={description:'Money Tracker Backup — auto-save',public:false,
+        files:{'money-tracker-data.json':{content:JSON.stringify(data,null,2)}}};
+      const method=data.gistId?'PATCH':'POST';
+      const url=data.gistId
+        ?'https://api.github.com/gists/'+data.gistId
+        :'https://api.github.com/gists';
+      const resp=await fetch(url,{method,
+        headers:{'Authorization':'token '+data.gistToken,'Content-Type':'application/json'},
+        body:JSON.stringify(body)});
+      if(resp.ok){
+        const j=await resp.json();
+        if(!data.gistId){S.gistId=j.id;localStorage.setItem('mt',JSON.stringify(S));}
+        localStorage.setItem('mt_last_gist',new Date().toISOString());
+      }
+    }catch(e){console.error('Gist save failed:',e);}
+  },2000); // debounce 2s
+}
+
+async function testGist(){
+  const token=document.getElementById('st-gist-token').value.trim();
+  const st=document.getElementById('gist-status');
+  if(!token){st.className='gist-status gist-err';st.textContent='Enter a token first';return;}
+  st.className='gist-status';st.textContent='Testing...';
+  try{
+    const r=await fetch('https://api.github.com/gists',{headers:{'Authorization':'token '+token}});
+    if(r.ok){st.className='gist-status gist-ok';st.textContent='✓ Token valid — auto-backup will work';}
+    else{st.className='gist-status gist-err';st.textContent='✗ Invalid token or missing Gist scope';}
+  }catch(e){st.className='gist-status gist-err';st.textContent='✗ Network error';}
+}
+
+async function restoreFromGist(){
+  const token=S.gistToken||document.getElementById('st-gist-token').value.trim();
+  const gistId=S.gistId||document.getElementById('st-gist-id').value.trim();
+  const st=document.getElementById('gist-status');
+  if(!token||!gistId){st.className='gist-status gist-err';st.textContent='Token and Gist ID required';return;}
+  st.textContent='Restoring...';
+  try{
+    const r=await fetch('https://api.github.com/gists/'+gistId,{headers:{'Authorization':'token '+token}});
+    const j=await r.json();
+    const content=j.files&&j.files['money-tracker-data.json']&&j.files['money-tracker-data.json'].content;
+    if(!content){st.className='gist-status gist-err';st.textContent='✗ Backup file not found in Gist';return;}
+    S=migrate(JSON.parse(content));
+    S.gistToken=token; S.gistId=gistId;
+    save(); rAll();
+    st.className='gist-status gist-ok';st.textContent='✓ Restored successfully';
+    closeModal('m-set');
+  }catch(e){st.className='gist-status gist-err';st.textContent='✗ Restore failed: '+e.message;}
+}
+
 function rAll() { rHdr(); rOv(); rExp(); rSub(); rSavings(); }
 
 function subsMoTotal(){return S.subscriptions.reduce((s,x)=>s+subMoEq(x),0);}
 
 function rHdr() {
   const de=dashExpenses(), sp=de.reduce((s,e)=>s+e.amt,0);
-  const sMo=subsMoTotal(), total=sp+sMo, sv=Math.max(0,S.income-total);
+  const sMo=subsMoTotal(), total=sp+sMo, sv=Math.max(0,S.currentPeriodIncome-total);
   document.getElementById('period-label').textContent = periodLabel();
-  document.getElementById('h-inc').textContent = fmt(S.income);
+  document.getElementById('h-inc').textContent = fmt(S.currentPeriodIncome);
   document.getElementById('h-sp').textContent  = fmt(total);
   document.getElementById('h-sv').textContent  = fmt(sv);
 }
@@ -700,13 +926,15 @@ function openDrill(catId){
 function rOv() {
   if(drillCat){openDrill(drillCat);return;}
   const de=dashExpenses(), sp=de.reduce((s,e)=>s+e.amt,0);
-  const sMo=subsMoTotal(), total=sp+sMo, rem=Math.max(0,S.income-total);
-  const pct=S.income>0?Math.min(100,Math.round(total/S.income*100)):0;
+  const sMo=subsMoTotal(), total=sp+sMo, rem=Math.max(0,S.currentPeriodIncome-total);
+  const pct=S.currentPeriodIncome>0?Math.min(100,Math.round(total/S.currentPeriodIncome*100)):0;
   document.getElementById('ov-rem').textContent = fmt(rem);
   const b=document.getElementById('ov-bar');
   b.style.width=pct+'%'; b.style.background=pct>90?'#FCA5A5':'#86EFAC';
   document.getElementById('ov-pct').textContent = pct+'% of income (incl. subs)';
   document.getElementById('ov-tgt').textContent = 'Target: '+fmt(S.savingsTarget)+' saved';
+  rBudgetChart(ct,de);
+  rHistory();
   document.getElementById('ov-period-lbl').textContent = S.periodMode
     ? fmtDate(S.periodStart)+' → today'
     : S.month;
@@ -766,7 +994,10 @@ function rExp() {
     ${ex.map(e=>{
       const cat=getCat(e.cat);
       const pmCls=PM_CLS[e.pm||'upi']||'pm-upi', pmLbl=(PM_LABELS[e.pm||'upi']||'UPI');
-      return`<div class="ei" onclick="openEditExp(${e.id})" style="cursor:pointer"><div class="ei-ico" style="background:${cat.color}22">${cat.emoji}</div><div class="ei-info"><div class="ei-desc">${e.desc}</div><div class="ei-sub"><span class="pm ${pmCls}">${pmLbl}</span><span>${cat.name}</span></div></div><div class="ei-r"><div class="ei-amt">${fmt(e.amt)}</div><button class="del-btn" onclick="event.stopPropagation();delExp(${e.id})" aria-label="Delete">✕</button></div></div>`;
+      const TL={'work':'💼 Work','social':'🎉 Social','essential':'✅ Essential','oneoff':'⚡ One-off','health':'🏥 Health','travel':'✈ Travel'}, TC={'work':'tag-work','social':'tag-social','essential':'tag-essential','oneoff':'tag-oneoff','health':'tag-health','travel':'tag-travel'};
+      const tagsHtml=(e.tags||[]).map(t=>'<span class="tag '+TC[t]+'">'+TL[t]+'</span>').join('');
+      const notesHtml=e.notes?'<div class="ei-notes">'+e.notes+'</div>':'';
+      return '<div class="ei" onclick="openEditExp('+e.id+')" style="cursor:pointer"><div class="ei-ico" style="background:'+cat.color+'22">'+cat.emoji+'</div><div class="ei-info"><div class="ei-desc">'+e.desc+'</div><div class="ei-sub"><span class="pm '+pmCls+'">'+pmLbl+'</span>'+tagsHtml+'</div>'+notesHtml+'</div><div class="ei-r"><div class="ei-amt">'+fmt(e.amt)+'</div><button class="del-btn" onclick="event.stopPropagation();delExp('+e.id+')">✕</button></div></div>';
     }).join('')}
   `).join('')+`<div style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:#E8EAF6;border-top:1px solid var(--border)"><span style="font-size:12px;font-weight:600;color:var(--t2)">${exps.length} expense${exps.length!==1?'s':''} · ${filterLabel}</span><span style="font-size:16px;font-weight:700;color:var(--t1)">${fmt(total)}</span></div>`;
 }
@@ -884,7 +1115,7 @@ function rSavings() {
 // ────────────────────────────────────────────────────────────────────────────
 // Actions
 // ────────────────────────────────────────────────────────────────────────────
-let curCat='', curPM='upi', curFreq='monthly', editingExpId=null, editingSubId=null;
+let curCat='', curPM='upi', curFreq='monthly', editingExpId=null, editingSubId=null, curTags2=new Set();
 
 function initExpForm(){
   editingExpId=null;
@@ -895,6 +1126,9 @@ function initExpForm(){
   document.getElementById('e-date').value=todayStr();
   document.getElementById('e-amt').value='';
   document.getElementById('e-desc').value='';
+  document.getElementById('e-notes').value='';
+  document.querySelectorAll('.tchip').forEach(b=>b.classList.remove('on'));
+  curTags=new Set();
   document.querySelectorAll('.pmt').forEach(b=>{b.classList.toggle('on',b.dataset.pm===curPM)});
 }
 
@@ -907,6 +1141,10 @@ function openEditExp(id){
   document.getElementById('e-date').value=exp.date;
   document.getElementById('e-amt').value=exp.amt;
   document.getElementById('e-desc').value=exp.desc;
+  document.getElementById('e-notes').value=exp.notes||'';
+  const expTags=exp.tags||[];
+  document.querySelectorAll('.tchip').forEach(b=>{b.classList.toggle('on',expTags.includes(b.dataset.tag));});
+  curTags=new Set(expTags);
   document.querySelectorAll('.pmt').forEach(b=>{b.classList.toggle('on',b.dataset.pm===curPM)});
   openModal('m-exp');
 }
@@ -918,11 +1156,13 @@ function pickFreq(b){document.querySelectorAll('.fq').forEach(x=>x.classList.rem
 function addExp(){
   const d=document.getElementById('e-date').value,a=parseFloat(document.getElementById('e-amt').value),dc=document.getElementById('e-desc').value.trim();
   if(!d||!a||!dc||!curCat) return;
+  const en=document.getElementById('e-notes').value.trim();
+  const et=[...curTags];
   if(editingExpId){
-    S.expenses=S.expenses.map(e=>e.id===editingExpId?{...e,date:d,cat:curCat,desc:dc,amt:a,pm:curPM}:e);
+    S.expenses=S.expenses.map(e=>e.id===editingExpId?{...e,date:d,cat:curCat,desc:dc,amt:a,pm:curPM,notes:en,tags:et}:e);
     editingExpId=null;
   } else {
-    S.expenses.push({id:Date.now(),date:d,cat:curCat,desc:dc,amt:a,pm:curPM});
+    S.expenses.push({id:Date.now(),date:d,cat:curCat,desc:dc,amt:a,pm:curPM,notes:en,tags:et});
   }
   save(); rAll(); closeModal('m-exp');
 }
@@ -1024,6 +1264,8 @@ function setDepBal(id){const v=prompt('Enter current balance (₹):');const n=pa
 function openSettings(){
   document.getElementById('st-inc').value=S.income;
   document.getElementById('st-tgt').value=S.savingsTarget;
+  document.getElementById('st-gist-token').value=S.gistToken||'';
+  document.getElementById('st-gist-id').value=S.gistId||'';
   document.getElementById('st-ps').value=S.periodStart;
   document.getElementById('st-month').value=S.month;
   document.getElementById('seg-period').classList.toggle('on',S.periodMode);
@@ -1049,6 +1291,8 @@ function markNewPeriod(){
 function saveSettings(){
   S.income=parseFloat(document.getElementById('st-inc').value)||0;
   S.savingsTarget=parseFloat(document.getElementById('st-tgt').value)||0;
+  S.gistToken=document.getElementById('st-gist-token').value.trim();
+  S.gistId=document.getElementById('st-gist-id').value.trim();
   S.periodMode=document.getElementById('seg-period').classList.contains('on');
   if(S.periodMode) S.periodStart=document.getElementById('st-ps').value||todayStr();
   else S.month=document.getElementById('st-month').value||S.month;
@@ -1111,9 +1355,23 @@ function openPeriodMenu(){
   openModal('m-period');
 }
 
-function openNewPeriod(){ openModal('m-newperiod'); }
+function openNewPeriod(){
+  document.getElementById('newperiod-income').value='';
+  document.getElementById('newperiod-default').textContent=S.income.toLocaleString('en-IN');
+  openModal('m-newperiod');
+}
 function confirmNewPeriod(){
+  const raw=document.getElementById('newperiod-income').value;
+  const actualIncome=parseFloat(raw)||S.income;
+  // Archive current period
+  S.periods.push({
+    id:Date.now(),
+    start:S.periodStart,
+    end:todayStr(),
+    income:S.currentPeriodIncome
+  });
   S.periodStart=todayStr();
+  S.currentPeriodIncome=actualIncome;
   S.expFilter='period';
   save(); rAll(); closeModal('m-newperiod');
 }
