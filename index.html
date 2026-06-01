@@ -60,7 +60,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .bc-bar{height:100%;border-radius:4px;transition:width .4s}
 .bc-meta{display:flex;justify-content:space-between;font-size:11px;opacity:.5}
 .cat-row{display:flex;align-items:center;gap:10px;padding:10px 0}
-.cat-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.cat-dot{display:none}
 .cat-nm{flex:1;font-size:14px}
 .cat-r{text-align:right}
 .cat-sp{font-size:14px;font-weight:600}
@@ -181,7 +181,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .deposit-nm{font-size:14px;font-weight:600;color:var(--t1)}
 .deposit-bal{font-size:20px;font-weight:700;color:var(--green);margin:4px 0}
 .deposit-meta{font-size:11px;color:var(--t3);margin-top:2px}
-.deposit-mat{font-size:12px;font-weight:600;color:var(--amber);margin-top:6px;display:flex;align-items:center;gap:5px}
+.deposit-mat{font-size:12px;font-weight:600;color:var(--amber);margin-top:6px}
+.interest-calc{font-size:12px;color:var(--green);margin-top:5px;font-weight:500}
+.int-toggle{display:flex;gap:6px;margin-top:8px}
+.it{flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid var(--border);font-size:11px;cursor:pointer;background:none;color:var(--t2);text-align:center;font-weight:500}
+.it.on{border-color:var(--green);background:#F0FAF3;color:var(--green);font-weight:600}
 .stype-toggle{display:flex;gap:7px;margin-bottom:12px}
 .stype{flex:1;padding:9px 4px;border-radius:9px;border:1.5px solid var(--border);font-size:12px;cursor:pointer;background:none;color:var(--t2);text-align:center;font-weight:500}
 .stype.on{border-color:var(--green);background:#F0FAF3;color:var(--green);font-weight:600}
@@ -238,7 +242,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     <div id="ov-drill-wrap" style="display:none">
       <div class="drill-hdr">
         <button class="back-btn" onclick="clearDrill()">← Back</button>
-        <span class="drill-cat-nm" id="drill-cat-nm"></span>
+        <div>
+          <div class="drill-cat-nm" id="drill-cat-nm"></div>
+          <div id="drill-cat-total" style="font-size:12px;color:var(--t2);margin-top:1px"></div>
+        </div>
       </div>
       <div id="ov-drill-list"></div>
     </div>
@@ -250,13 +257,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     </div><!-- /ov-main-cats -->
     <div class="sec" style="margin-top:14px;margin-bottom:16px">
       <div class="sec-ttl">Subscriptions</div>
-      <div class="card" style="padding:13px 16px">
+      <div id="ov-subs-drill" style="display:none">
+        <div style="background:var(--surface)" id="ov-subs-list"></div>
+      </div>
+      <div class="card" style="padding:13px 16px;cursor:pointer" onclick="toggleSubsDrill()" id="ov-subs-summary">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
             <div style="font-size:13px;color:var(--t2)" id="ov-sc">0 subscriptions</div>
             <div style="font-size:11px;color:var(--t3);margin-top:2px" id="ov-sa">—</div>
           </div>
-          <div style="font-size:20px;font-weight:700;color:var(--purple)" id="ov-sm">₹0/mo</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:20px;font-weight:700;color:var(--purple)" id="ov-sm">₹0/mo</div>
+            <span id="ov-subs-chevron" style="color:var(--t3);font-size:13px">›</span>
+          </div>
         </div>
       </div>
     </div>
@@ -387,6 +400,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       <div class="fr">
         <div class="ff"><label class="fl">Current balance ₹</label><input class="fi" type="number" id="g-bal" placeholder="0" inputmode="decimal"/></div>
         <div class="ff"><label class="fl">Maturity date</label><input class="fi" type="date" id="g-mat"/></div>
+      </div>
+      <div class="fr">
+        <div class="ff"><label class="fl">Interest rate % p.a.</label><input class="fi" type="number" id="g-rate" placeholder="e.g. 7.1" inputmode="decimal" step="0.01"/></div>
+        <div class="ff"><label class="fl">Interest type</label>
+          <div class="int-toggle">
+            <button class="it on" data-it="compound" onclick="pickIntType(this)">Compound</button>
+            <button class="it" data-it="simple" onclick="pickIntType(this)">Simple</button>
+          </div>
+        </div>
       </div>
       <div class="ff"><label class="fl">Notes</label><input class="fi" type="text" id="g-notes" placeholder="SBI PPF, runs till 2040..."/></div>
     </div>
@@ -615,6 +637,38 @@ function rHdr() {
   document.getElementById('h-sv').textContent  = fmt(sv);
 }
 
+
+let subsDrillOpen=false;
+function toggleSubsDrill(){
+  subsDrillOpen=!subsDrillOpen;
+  const drill=document.getElementById('ov-subs-drill');
+  const chev=document.getElementById('ov-subs-chevron');
+  if(subsDrillOpen){
+    const sorted=[...S.subscriptions].sort((a,b)=>(a.order||0)-(b.order||0));
+    const FREQ={'daily':'Daily','weekly':'Weekly','monthly':'Monthly','annually':'Annually'};
+    drill.innerHTML='<div style="background:var(--surface)">'
+      +sorted.map(s=>{
+        const mo=subMoEq(s), showMo=s.freq!=='monthly';
+        const ren=s.ren?'Renews '+new Date(s.ren).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'';
+        return '<div class="si" onclick="openEditSub('+s.id+')" style="cursor:pointer">'
+          +'<div class="si-ico">🔄</div>'
+          +'<div class="si-info"><div class="si-nm">'+s.nm+' <span class="freq-pill">'+FREQ[s.freq||'monthly']+'</span></div>'
+          +'<div class="si-meta">'+ren+'</div></div>'
+          +'<div class="si-r"><div class="si-amt">'+fmt(s.amt)+(s.freq==='annually'?'/yr':s.freq==='monthly'?'/mo':s.freq==='weekly'?'/wk':'/day')+'</div>'
+          +(showMo?'<div class="si-mo">'+fmt(mo)+'/mo</div>':'')+'</div></div>';
+      }).join('')
+      +'<div style="display:flex;justify-content:space-between;padding:10px 14px;background:#EDE7F6;border-top:1px solid var(--border)">'
+      +'<span style="font-size:12px;font-weight:600;color:var(--t2)">'+sorted.length+' subscription'+(sorted.length!==1?'s':'')+'</span>'
+      +'<span style="font-size:14px;font-weight:700;color:var(--purple)">'+fmt(S.subscriptions.reduce((s,x)=>s+subMoEq(x),0))+'/mo</span></div>'
+      +'</div>';
+    drill.style.display='';
+    chev.textContent='▾';
+  } else {
+    drill.style.display='none';
+    chev.textContent='›';
+  }
+}
+
 let drillCat=null;
 
 function clearDrill(){
@@ -627,6 +681,7 @@ function openDrill(catId){
   const cat=S.categories.find(c=>c.id===catId); if(!cat) return;
   drillCat=catId;
   document.getElementById('drill-cat-nm').textContent=cat.emoji+' '+cat.name;
+  document.getElementById('drill-cat-total').textContent='';// updated after total known
   const de=dashExpenses(), exps=de.filter(e=>e.cat===catId).sort((a,b)=>b.date.localeCompare(a.date));
   const total=exps.reduce((s,e)=>s+e.amt,0);
   const grp={};
@@ -635,7 +690,7 @@ function openDrill(catId){
   const PM_LABELS2={cash:'💵 Cash',upi:'📲 UPI',card:'💳 Card'};
   let html=exps.length===0?'<div class="empty">No expenses in this category this period.</div>'
     :Object.entries(grp).map(([d,ex])=>`<div class="eg-date">${d}</div>`+ex.map(e=>`<div class="ei" onclick="openEditExp(${e.id})" style="cursor:pointer"><div class="ei-ico" style="background:${cat.color}22">${cat.emoji}</div><div class="ei-info"><div class="ei-desc">${e.desc}</div><div class="ei-sub"><span class="pm ${PM_CLS2[e.pm||'upi']}">${PM_LABELS2[e.pm||'upi']}</span></div></div><div class="ei-r"><div class="ei-amt">${fmt(e.amt)}</div><button class="del-btn" onclick="event.stopPropagation();delExp(${e.id})">✕</button></div></div>`).join('')).join('');
-  if(exps.length>0) html+=`<div style="display:flex;justify-content:space-between;padding:12px 16px;background:#E8EAF6;border-top:1px solid var(--border)"><span style="font-size:12px;font-weight:600;color:var(--t2)">${exps.length} expense${exps.length!==1?'s':''}</span><span style="font-size:15px;font-weight:700">${fmt(total)}</span></div>`;
+  document.getElementById('drill-cat-total').textContent=exps.length>0?fmt(total)+' · '+exps.length+' expense'+(exps.length!==1?'s':''):'Nothing spent here';
   document.getElementById('ov-drill-list').innerHTML=html;
   document.getElementById('ov-drill-wrap').style.display='';
   document.getElementById('ov-main-cats').style.display='none';
@@ -667,10 +722,10 @@ function rOv() {
     cc.innerHTML=active.map(cat=>{
       const sp2=ct[cat.id],bg=cat.budget||1,p=Math.min(100,Math.round(sp2/bg*100));
       const cl=p>100?'#E24B4A':cat.color;
-      return`<div class="cat-row cat-row-tap divider" onclick="openDrill('${cat.id}')"><div class="cat-dot" style="background:${cat.color}"></div><div class="cat-nm">${cat.name}</div><div class="cat-r"><div class="cat-sp">${fmt(sp2)}</div><div class="cat-bg">of ${fmt(cat.budget)}</div><div class="pbar-bg"><div class="pbar" style="width:${p}%;background:${cl}"></div></div></div><span style="color:var(--t3);font-size:11px;margin-left:6px">›</span></div>`;
+      return`<div class="cat-row cat-row-tap divider" onclick="openDrill('${cat.id}')"><span style="font-size:18px;width:22px;text-align:center;flex-shrink:0">${cat.emoji}</span><div class="cat-nm">${cat.name}</div><div class="cat-r"><div class="cat-sp">${fmt(sp2)}</div><div class="cat-bg">of ${fmt(cat.budget)}</div><div class="pbar-bg"><div class="pbar" style="width:${p}%;background:${cl}"></div></div></div><span style="color:var(--t3);font-size:11px;margin-left:6px">›</span></div>`;
     }).join('');
     // Subs line at bottom of category card
-    cc.innerHTML+=`<div class="subs-row"><div style="display:flex;align-items:center;gap:7px"><div class="cat-dot" style="background:var(--purple)"></div><span style="font-size:13px;color:var(--t2)">Subscriptions</span></div><div class="cat-r"><div class="cat-sp" style="color:var(--purple)">${fmt(sMo)}</div><div class="cat-bg">per month</div></div></div>`;
+    cc.innerHTML+=`<div class="subs-row cat-row-tap" onclick="toggleSubsDrill()"><div style="display:flex;align-items:center;gap:7px"><span style="font-size:18px;width:22px;text-align:center">🔄</span><span style="font-size:13px;color:var(--t2)">Subscriptions</span></div><div class="cat-r"><div class="cat-sp" style="color:var(--purple)">${fmt(sMo)}</div><div class="cat-bg">per month</div></div></div>`;
   }
 
   const sTot=sMo;
@@ -748,23 +803,57 @@ function rSub() {
   }).join('');
 }
 
+
+function openEditDep(id){
+  const g=S.goals.find(x=>String(x.id)===String(id)); if(!g||g.type!=='deposit') return;
+  curSavType='deposit'; curIntType=g.intType||'compound';
+  document.getElementById('sav-modal-title').textContent='Edit deposit';
+  document.getElementById('sav-submit-btn').textContent='Update';
+  document.querySelectorAll('.stype').forEach(b=>b.classList.toggle('on',b.dataset.st==='deposit'));
+  document.getElementById('goal-fields').style.display='none';
+  document.getElementById('deposit-fields').style.display='';
+  document.getElementById('g-nm').value=g.nm||'';
+  document.getElementById('g-bal').value=g.bal||'';
+  document.getElementById('g-mat').value=g.mat||'';
+  document.getElementById('g-rate').value=g.rate||'';
+  document.getElementById('g-notes').value=g.notes||'';
+  document.querySelectorAll('.it').forEach(b=>b.classList.toggle('on',b.dataset.it===curIntType));
+  // Store editing id by re-using sav-submit-btn data attribute
+  document.getElementById('sav-submit-btn').dataset.editId=id;
+  openModal('m-goal');
+}
+
+function projectedValue(g){
+  if(!g.bal||!g.rate||!g.mat) return null;
+  const yrs=(new Date(g.mat)-new Date())/(1000*60*60*24*365.25);
+  if(yrs<=0) return null;
+  const r=g.rate/100;
+  const val=g.intType==='simple'?g.bal*(1+r*yrs):g.bal*Math.pow(1+r,yrs);
+  return Math.round(val);
+}
+
 function depositCard(g,matLabel,countdown,urgency){
   var gid=String(g.id);
   var notesHtml=g.notes?'<div class="deposit-meta">'+g.notes+'</div>':'';
   var balHtml=g.bal>0?fmt(g.bal):'Balance not set';
+  var proj=projectedValue(g);
+  var interestHtml=proj?('<div class="interest-calc">📈 At '+g.rate+'% p.a. ('+( g.intType||'compound')+') → '+fmt(proj)+' at maturity</div>'):'';
   var qadd=g.bal>0
     ?('<div class="qadd" style="margin-top:10px">'
       +'<button class="qa" onclick="bumpDep(\''+gid+'\',1000)">+₹1k</button>'
       +'<button class="qa" onclick="bumpDep(\''+gid+'\',5000)">+₹5k</button>'
       +'<button class="qa" onclick="bumpDep(\''+gid+'\',10000)">+₹10k</button>'
-      +'<button class="qa" onclick="bumpDep(\''+gid+'\',25000)">+₹25k</button></div>')
+      +'<button class="qa" onclick="bumpDep(\''+gid+'\',25000)">+₹25k</button>'
+      +'<button class="qa" onclick="openEditDep(\''+gid+'\')">✏ Edit</button></div>')
     :('<div class="qadd" style="margin-top:8px">'
-      +'<button class="qa" onclick="setDepBal(\''+gid+'\')">Set balance</button></div>');
+      +'<button class="qa" onclick="setDepBal(\''+gid+'\')">Set balance</button>'
+      +'<button class="qa" onclick="openEditDep(\''+gid+'\')">✏ Edit</button></div>');
   return '<div class="deposit-card">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
     +'<div><div class="deposit-nm">🏦 '+g.nm+'</div>'+notesHtml+'</div>'
     +'<button class="del-btn" onclick="delGoal(\''+gid+'\')">✕</button></div>'
     +'<div class="deposit-bal">'+balHtml+'</div>'
+    +interestHtml
     +'<div class="deposit-mat" style="color:'+urgency+'">📅 Matures '+matLabel+countdown+'</div>'
     +qadd+'</div>';
 }
@@ -880,7 +969,8 @@ function reorderSub(id,dir){
   S.subscriptions=sorted; save(); rSub();
 }
 
-let curSavType='goal';
+let curSavType='goal', curIntType='compound';
+function pickIntType(b){document.querySelectorAll('.it').forEach(x=>x.classList.remove('on'));b.classList.add('on');curIntType=b.dataset.it;}
 function pickSavType(b){
   document.querySelectorAll('.stype').forEach(x=>x.classList.remove('on'));b.classList.add('on');
   curSavType=b.dataset.st;
@@ -891,11 +981,24 @@ function pickSavType(b){
 function addGoal(){
   const n=document.getElementById('g-nm').value.trim();
   if(!n) return;
+  // Check if editing existing deposit
+  const editId=document.getElementById('sav-submit-btn').dataset.editId;
+  if(editId && curSavType==='deposit'){
+    const bal=parseFloat(document.getElementById('g-bal').value)||0;
+    const mat=document.getElementById('g-mat').value;
+    const notes=document.getElementById('g-notes').value.trim();
+    const rate=parseFloat(document.getElementById('g-rate').value)||0;
+    S.goals=S.goals.map(g=>String(g.id)===String(editId)?{...g,nm:n,bal,mat,notes,rate,intType:curIntType}:g);
+    delete document.getElementById('sav-submit-btn').dataset.editId;
+    save(); rSavings(); closeModal('m-goal');
+    return;
+  }
   if(curSavType==='deposit'){
     const bal=parseFloat(document.getElementById('g-bal').value)||0;
     const mat=document.getElementById('g-mat').value;
     const notes=document.getElementById('g-notes').value.trim();
-    S.goals.push({id:Date.now(),type:'deposit',nm:n,bal,mat,notes});
+    const rate=parseFloat(document.getElementById('g-rate').value)||0;
+    S.goals.push({id:Date.now(),type:'deposit',nm:n,bal,mat,notes,rate,intType:curIntType});
   } else {
     const t=parseFloat(document.getElementById('g-tgt').value)||0,s=parseFloat(document.getElementById('g-sv').value)||0;
     if(!t) return;
@@ -904,7 +1007,7 @@ function addGoal(){
   save(); rSavings(); closeModal('m-goal');
   document.getElementById('g-nm').value='';
   document.getElementById('g-tgt').value=''; document.getElementById('g-sv').value='';
-  document.getElementById('g-bal').value=''; document.getElementById('g-mat').value=''; document.getElementById('g-notes').value='';
+  document.getElementById('g-bal').value=''; document.getElementById('g-mat').value=''; document.getElementById('g-notes').value=''; document.getElementById('g-rate').value='';
   curSavType='goal';
   document.querySelectorAll('.stype').forEach((b,i)=>b.classList.toggle('on',i===0));
   document.getElementById('goal-fields').style.display='';
