@@ -171,6 +171,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .seg{display:flex;background:var(--bg);border-radius:10px;padding:3px;gap:2px;margin-bottom:12px}
 .seg-o{flex:1;padding:8px;border-radius:8px;border:none;font-size:13px;cursor:pointer;background:none;color:var(--t2);font-weight:500}
 .seg-o.on{background:var(--accent);color:#fff}
+
+.drill-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px 6px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.back-btn{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;color:var(--t2);display:flex;align-items:center;gap:4px}
+.drill-cat-nm{font-size:14px;font-weight:600;color:var(--t1)}
+.cat-row-tap{cursor:pointer;transition:background .1s}.cat-row-tap:active{background:var(--bg)}
+.subs-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px dashed var(--border);margin-top:4px}
+.deposit-card{background:var(--surface);border-radius:var(--r);padding:14px;margin:0 14px 10px;box-shadow:var(--sh);border-left:3px solid var(--green)}
+.deposit-nm{font-size:14px;font-weight:600;color:var(--t1)}
+.deposit-bal{font-size:20px;font-weight:700;color:var(--green);margin:4px 0}
+.deposit-meta{font-size:11px;color:var(--t3);margin-top:2px}
+.deposit-mat{font-size:12px;font-weight:600;color:var(--amber);margin-top:6px;display:flex;align-items:center;gap:5px}
+.stype-toggle{display:flex;gap:7px;margin-bottom:12px}
+.stype{flex:1;padding:9px 4px;border-radius:9px;border:1.5px solid var(--border);font-size:12px;cursor:pointer;background:none;color:var(--t2);text-align:center;font-weight:500}
+.stype.on{border-color:var(--green);background:#F0FAF3;color:var(--green);font-weight:600}
+.total-subs-note{font-size:11px;color:var(--purple);margin-top:3px}
+
 .new-period-btn{width:100%;padding:12px;background:rgba(134,239,172,.12);color:var(--green);border:1.5px solid rgba(134,239,172,.3);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
 
 /* ── Month picker ── */
@@ -219,10 +235,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       <div><div class="pi-lbl">Current pay period</div><div class="pi-val" id="ov-period-lbl">—</div></div>
       <button class="pill em" onclick="openNewPeriod()">💰 Got paid</button>
     </div>
+    <div id="ov-drill-wrap" style="display:none">
+      <div class="drill-hdr">
+        <button class="back-btn" onclick="clearDrill()">← Back</button>
+        <span class="drill-cat-nm" id="drill-cat-nm"></span>
+      </div>
+      <div id="ov-drill-list"></div>
+    </div>
+    <div id="ov-main-cats">
     <div class="sec" style="margin-top:14px">
       <div class="sec-ttl">By category</div>
       <div class="card" style="padding:6px 16px" id="ov-cats"><div class="empty">No expenses this period yet</div></div>
     </div>
+    </div><!-- /ov-main-cats -->
     <div class="sec" style="margin-top:14px;margin-bottom:16px">
       <div class="sec-ttl">Subscriptions</div>
       <div class="card" style="padding:13px 16px">
@@ -259,7 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   <!-- Savings -->
   <div class="pane" id="pane-sav">
     <div style="height:12px"></div>
-    <div id="goal-list"><div class="empty">No goals yet.<br>Tap + to create one.</div></div>
+    <div id="goal-list"><div class="empty">No savings entries yet.<br>Tap + to add one.</div></div>
     <div style="height:80px"></div>
   </div>
 
@@ -344,13 +369,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   <div class="bk-tap" onclick="closeModal('m-goal')"></div>
   <div class="sheet">
     <div class="sheet-top"><div class="handle"></div></div>
-    <div class="sh-hdr"><span class="sh-ttl">New savings goal</span><button class="close-x" onclick="closeModal('m-goal')">✕</button></div>
-    <div class="ff"><label class="fl">Goal name</label><input class="fi" type="text" id="g-nm" placeholder="MacBook Pro, Road bike..."/></div>
-    <div class="fr">
-      <div class="ff"><label class="fl">Target ₹</label><input class="fi" type="number" id="g-tgt" placeholder="0" inputmode="decimal"/></div>
-      <div class="ff"><label class="fl">Saved so far ₹</label><input class="fi" type="number" id="g-sv" placeholder="0" inputmode="decimal"/></div>
+    <div class="sh-hdr"><span class="sh-ttl" id="sav-modal-title">New savings entry</span><button class="close-x" onclick="closeModal('m-goal')">✕</button></div>
+    <div class="ff"><label class="fl">Type</label>
+      <div class="stype-toggle">
+        <button class="stype on" data-st="goal" onclick="pickSavType(this)">🎯 Goal</button>
+        <button class="stype" data-st="deposit" onclick="pickSavType(this)">🏦 Deposit / FD / PPF</button>
+      </div>
     </div>
-    <button class="btn-p" onclick="addGoal()">Add goal</button>
+    <div class="ff"><label class="fl" id="g-nm-lbl">Name</label><input class="fi" type="text" id="g-nm" placeholder="MacBook Pro, PPF, FD..."/></div>
+    <div id="goal-fields">
+      <div class="fr">
+        <div class="ff"><label class="fl">Target ₹</label><input class="fi" type="number" id="g-tgt" placeholder="0" inputmode="decimal"/></div>
+        <div class="ff"><label class="fl">Saved so far ₹</label><input class="fi" type="number" id="g-sv" placeholder="0" inputmode="decimal"/></div>
+      </div>
+    </div>
+    <div id="deposit-fields" style="display:none">
+      <div class="fr">
+        <div class="ff"><label class="fl">Current balance ₹</label><input class="fi" type="number" id="g-bal" placeholder="0" inputmode="decimal"/></div>
+        <div class="ff"><label class="fl">Maturity date</label><input class="fi" type="date" id="g-mat"/></div>
+      </div>
+      <div class="ff"><label class="fl">Notes</label><input class="fi" type="text" id="g-notes" placeholder="SBI PPF, runs till 2040..."/></div>
+    </div>
+    <button class="btn-p" id="sav-submit-btn" onclick="addGoal()">Add</button>
   </div>
 </div>
 
@@ -452,20 +492,31 @@ const DEFAULT_CATS = [
 ];
 
 const DEFAULT_STATE = {
-  income:72000, savingsTarget:15000,
+  income:72000, savingsTarget:25000,
   periodMode:true, periodStart:'2026-05-27',
   month:'May 2026', expFilter:'period',
-  categories: DEFAULT_CATS,
+  categories:[
+    {id:'c2',name:'Food & eating out',emoji:'🍱',color:'#D4785A',budget:12000},
+    {id:'c3',name:'Transport',emoji:'🚌',color:'#5B9B7A',budget:5000},
+    {id:'c4',name:'Subscriptions',emoji:'🔄',color:'#8B6BC8',budget:3000},
+    {id:'c5',name:'Shopping',emoji:'🛍',color:'#C8916B',budget:8000},
+    {id:'c6',name:'Other',emoji:'·',color:'#888780',budget:5000},
+    {id:'c1780262730816',name:'Savings',emoji:'🏦',color:'#E24B4A',budget:25000},
+  ],
   expenses:[],
   subscriptions:[
-    {id:1,nm:'Airtel WiFi + Netflix',amt:2337,ren:'2026-06-09',freq:'monthly',order:0},
+    {id:1780135096153,nm:'NYT Games',amt:50,ren:'2026-05-30',freq:'monthly',order:0},
     {id:2,nm:'Spotify Premium',amt:139,ren:'2026-06-18',freq:'monthly',order:1},
-    {id:3,nm:'Claude AI Pro',amt:2242,ren:'2026-06-29',freq:'monthly',order:2},
-    {id:4,nm:'Hotstar',amt:1500,ren:'2026-10-30',freq:'annually',order:3},
-    {id:5,nm:'Google AI Plus (2 TB)',amt:650,ren:'',freq:'monthly',order:4},
-    {id:6,nm:'YouTube Premium',amt:149,ren:'',freq:'monthly',order:5},
+    {id:6,nm:'YouTube Premium',amt:149,ren:'2026-06-28',freq:'monthly',order:2},
+    {id:5,nm:'Google AI Plus (2 TB)',amt:650,ren:'2026-06-24',freq:'monthly',order:3},
+    {id:3,nm:'Claude AI Pro',amt:2242,ren:'2026-06-29',freq:'monthly',order:4},
+    {id:1,nm:'Airtel WiFi + Netflix',amt:2337,ren:'2026-06-09',freq:'monthly',order:5},
+    {id:4,nm:'Hotstar',amt:1500,ren:'2026-10-30',freq:'annually',order:6},
   ],
-  goals:[]
+  goals:[
+    {id:'dep1',type:'deposit',nm:'PPF — SBI',bal:0,mat:'2040-03-31',notes:'Public Provident Fund, runs till 2040'},
+    {id:'dep2',type:'deposit',nm:'Fixed Deposit — SBI',bal:0,mat:'2026-12-28',notes:'FD matures 28 Dec 2026'},
+  ]
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -496,7 +547,7 @@ function migrate(old) {
     income:old.income||75000, savingsTarget:old.savingsTarget||15000,
     periodMode:true, periodStart:old.periodStart||'2026-05-27',
     month:old.month||'May 2026', expFilter:'period',
-    categories, expenses, subscriptions, goals:old.goals||[],
+    categories, expenses, subscriptions, goals:(old.goals||[]).map(g=>({type:'goal',...g})),
   };
 }
 
@@ -551,23 +602,55 @@ function periodLabel() {
 // ────────────────────────────────────────────────────────────────────────────
 // Render
 // ────────────────────────────────────────────────────────────────────────────
-function rAll() { rHdr(); rOv(); rExp(); rSub(); rGoals(); }
+function rAll() { rHdr(); rOv(); rExp(); rSub(); rSavings(); }
+
+function subsMoTotal(){return S.subscriptions.reduce((s,x)=>s+subMoEq(x),0);}
 
 function rHdr() {
-  const de = dashExpenses(), sp=de.reduce((s,e)=>s+e.amt,0), sv=Math.max(0,S.income-sp);
+  const de=dashExpenses(), sp=de.reduce((s,e)=>s+e.amt,0);
+  const sMo=subsMoTotal(), total=sp+sMo, sv=Math.max(0,S.income-total);
   document.getElementById('period-label').textContent = periodLabel();
   document.getElementById('h-inc').textContent = fmt(S.income);
-  document.getElementById('h-sp').textContent  = fmt(sp);
+  document.getElementById('h-sp').textContent  = fmt(total);
   document.getElementById('h-sv').textContent  = fmt(sv);
 }
 
+let drillCat=null;
+
+function clearDrill(){
+  drillCat=null;
+  document.getElementById('ov-drill-wrap').style.display='none';
+  document.getElementById('ov-main-cats').style.display='';
+}
+
+function openDrill(catId){
+  const cat=S.categories.find(c=>c.id===catId); if(!cat) return;
+  drillCat=catId;
+  document.getElementById('drill-cat-nm').textContent=cat.emoji+' '+cat.name;
+  const de=dashExpenses(), exps=de.filter(e=>e.cat===catId).sort((a,b)=>b.date.localeCompare(a.date));
+  const total=exps.reduce((s,e)=>s+e.amt,0);
+  const grp={};
+  exps.forEach(e=>{const d=new Date(e.date).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});(grp[d]=grp[d]||[]).push(e)});
+  const PM_CLS2={cash:'pm-cash',upi:'pm-upi',card:'pm-card'};
+  const PM_LABELS2={cash:'💵 Cash',upi:'📲 UPI',card:'💳 Card'};
+  let html=exps.length===0?'<div class="empty">No expenses in this category this period.</div>'
+    :Object.entries(grp).map(([d,ex])=>`<div class="eg-date">${d}</div>`+ex.map(e=>`<div class="ei" onclick="openEditExp(${e.id})" style="cursor:pointer"><div class="ei-ico" style="background:${cat.color}22">${cat.emoji}</div><div class="ei-info"><div class="ei-desc">${e.desc}</div><div class="ei-sub"><span class="pm ${PM_CLS2[e.pm||'upi']}">${PM_LABELS2[e.pm||'upi']}</span></div></div><div class="ei-r"><div class="ei-amt">${fmt(e.amt)}</div><button class="del-btn" onclick="event.stopPropagation();delExp(${e.id})">✕</button></div></div>`).join('')).join('');
+  if(exps.length>0) html+=`<div style="display:flex;justify-content:space-between;padding:12px 16px;background:#E8EAF6;border-top:1px solid var(--border)"><span style="font-size:12px;font-weight:600;color:var(--t2)">${exps.length} expense${exps.length!==1?'s':''}</span><span style="font-size:15px;font-weight:700">${fmt(total)}</span></div>`;
+  document.getElementById('ov-drill-list').innerHTML=html;
+  document.getElementById('ov-drill-wrap').style.display='';
+  document.getElementById('ov-main-cats').style.display='none';
+  document.getElementById('content').scrollTop=0;
+}
+
 function rOv() {
-  const de=dashExpenses(), sp=de.reduce((s,e)=>s+e.amt,0), rem=Math.max(0,S.income-sp);
-  const pct=S.income>0?Math.min(100,Math.round(sp/S.income*100)):0;
+  if(drillCat){openDrill(drillCat);return;}
+  const de=dashExpenses(), sp=de.reduce((s,e)=>s+e.amt,0);
+  const sMo=subsMoTotal(), total=sp+sMo, rem=Math.max(0,S.income-total);
+  const pct=S.income>0?Math.min(100,Math.round(total/S.income*100)):0;
   document.getElementById('ov-rem').textContent = fmt(rem);
   const b=document.getElementById('ov-bar');
   b.style.width=pct+'%'; b.style.background=pct>90?'#FCA5A5':'#86EFAC';
-  document.getElementById('ov-pct').textContent = pct+'% of income spent';
+  document.getElementById('ov-pct').textContent = pct+'% of income (incl. subs)';
   document.getElementById('ov-tgt').textContent = 'Target: '+fmt(S.savingsTarget)+' saved';
   document.getElementById('ov-period-lbl').textContent = S.periodMode
     ? fmtDate(S.periodStart)+' → today'
@@ -578,14 +661,19 @@ function rOv() {
   de.forEach(e=>{ct[e.cat]=(ct[e.cat]||0)+e.amt});
   const active=S.categories.filter(c=>ct[c.id]>0);
   const cc=document.getElementById('ov-cats');
-  if(!active.length){cc.innerHTML='<div class="empty">No expenses this period yet</div>';return;}
-  cc.innerHTML=active.map(c=>{
-    const sp2=ct[c.id],bg=c.budget||1,p=Math.min(100,Math.round(sp2/bg*100));
-    const cl=p>100?'#E24B4A':c.color;
-    return`<div class="cat-row divider"><div class="cat-dot" style="background:${c.color}"></div><div class="cat-nm">${c.name}</div><div class="cat-r"><div class="cat-sp">${fmt(sp2)}</div><div class="cat-bg">of ${fmt(c.budget)}</div><div class="pbar-bg"><div class="pbar" style="width:${p}%;background:${cl}"></div></div></div></div>`;
-  }).join('');
+  if(!active.length){
+    cc.innerHTML='<div class="empty">No expenses this period yet</div>';
+  } else {
+    cc.innerHTML=active.map(cat=>{
+      const sp2=ct[cat.id],bg=cat.budget||1,p=Math.min(100,Math.round(sp2/bg*100));
+      const cl=p>100?'#E24B4A':cat.color;
+      return`<div class="cat-row cat-row-tap divider" onclick="openDrill('${cat.id}')"><div class="cat-dot" style="background:${cat.color}"></div><div class="cat-nm">${cat.name}</div><div class="cat-r"><div class="cat-sp">${fmt(sp2)}</div><div class="cat-bg">of ${fmt(cat.budget)}</div><div class="pbar-bg"><div class="pbar" style="width:${p}%;background:${cl}"></div></div></div><span style="color:var(--t3);font-size:11px;margin-left:6px">›</span></div>`;
+    }).join('');
+    // Subs line at bottom of category card
+    cc.innerHTML+=`<div class="subs-row"><div style="display:flex;align-items:center;gap:7px"><div class="cat-dot" style="background:var(--purple)"></div><span style="font-size:13px;color:var(--t2)">Subscriptions</span></div><div class="cat-r"><div class="cat-sp" style="color:var(--purple)">${fmt(sMo)}</div><div class="cat-bg">per month</div></div></div>`;
+  }
 
-  const sTot=S.subscriptions.reduce((s,x)=>s+subMoEq(x),0);
+  const sTot=sMo;
   document.getElementById('ov-sc').textContent=S.subscriptions.length+' active subscription'+(S.subscriptions.length!==1?'s':'');
   document.getElementById('ov-sa').textContent=fmt(sTot*12)+' per year';
   document.getElementById('ov-sm').textContent=fmt(sTot)+'/mo';
@@ -660,13 +748,26 @@ function rSub() {
   }).join('');
 }
 
-function rGoals() {
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  const diff=new Date(dateStr)-new Date();
+  return Math.ceil(diff/(1000*60*60*24));
+}
+
+function rSavings() {
   const gl=document.getElementById('goal-list');
-  if(!S.goals.length){gl.innerHTML='<div class="empty">No goals yet.<br>Tap + to create one.</div>';return;}
+  if(!S.goals.length){gl.innerHTML='<div class="empty">No savings entries yet.<br>Tap + to add one.</div>';return;}
   gl.innerHTML=S.goals.map(g=>{
+    if(g.type==='deposit'){
+      const days=daysUntil(g.mat);
+      const matLabel=g.mat?new Date(g.mat).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'No maturity date';
+      const countdown=days===null?'':days<0?'Matured':days===0?'Matures today':''+days+' days to maturity';
+      const urgency=days!==null&&days<=90?'var(--coral)':days!==null&&days<=180?'var(--amber)':'var(--green)';
+      return`<div class="deposit-card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="deposit-nm">🏦 ${g.nm}</div>${g.notes?`<div class="deposit-meta">${g.notes}</div>`:''}</div><button class="del-btn" onclick="delGoal('${g.id}')">✕</button></div><div class="deposit-bal">${g.bal>0?fmt(g.bal):'Balance not set'}</div><div class="deposit-mat" style="color:${urgency}">📅 Matures ${matLabel}${countdown?' · '+countdown:''}</div>${g.bal>0?`<div class="qadd" style="margin-top:10px"><button class="qa" onclick="bumpDep('${g.id}',1000)">+₹1k</button><button class="qa" onclick="bumpDep('${g.id}',5000)">+₹5k</button><button class="qa" onclick="bumpDep('${g.id}',10000)">+₹10k</button><button class="qa" onclick="bumpDep('${g.id}',25000)">+₹25k</button></div>`:'<div class="qadd" style="margin-top:8px"><button class="qa" onclick="setDepBal(''+g.id+'')">Set balance</button></div>'}</div>`;
+    }
     const p=g.tgt>0?Math.min(100,Math.round(g.sv/g.tgt*100)):0,done=p>=100;
     const rem=Math.max(0,g.tgt-g.sv),mo=S.savingsTarget>0?Math.ceil(rem/S.savingsTarget):'—';
-    return`<div class="goal"><div class="goal-hdr"><div class="goal-nm">${g.nm}</div><button class="del-btn" onclick="delGoal(${g.id})">✕</button></div><div class="goal-nums"><div class="goal-sv">${fmt(g.sv)}</div><div class="goal-tg">of ${fmt(g.tgt)}</div></div><div class="gbar-bg"><div class="gbar${done?' done':''}" style="width:${p}%"></div></div><div class="goal-foot"><div class="goal-pct">${p}% complete</div><div class="goal-eta">${done?'✓ Goal reached!':mo!=='—'?'~'+mo+' months left':'Set savings target'}</div></div>${!done?`<div class="qadd"><button class="qa" onclick="bump(${g.id},1000)">+₹1k</button><button class="qa" onclick="bump(${g.id},5000)">+₹5k</button><button class="qa" onclick="bump(${g.id},10000)">+₹10k</button></div>`:''}</div>`;
+    return`<div class="goal"><div class="goal-hdr"><div class="goal-nm">${g.nm}</div><button class="del-btn" onclick="delGoal('${g.id}')">✕</button></div><div class="goal-nums"><div class="goal-sv">${fmt(g.sv)}</div><div class="goal-tg">of ${fmt(g.tgt)}</div></div><div class="gbar-bg"><div class="gbar${done?' done':''}" style="width:${p}%"></div></div><div class="goal-foot"><div class="goal-pct">${p}% complete</div><div class="goal-eta">${done?'✓ Goal reached!':mo!=='—'?'~'+mo+' months left':'Set savings target'}</div></div>${!done?`<div class="qadd"><button class="qa" onclick="bump('${g.id}',1000)">+₹1k</button><button class="qa" onclick="bump('${g.id}',5000)">+₹5k</button><button class="qa" onclick="bump('${g.id}',10000)">+₹10k</button></div>`:''}</div>`;
   }).join('');
 }
 
@@ -758,15 +859,40 @@ function reorderSub(id,dir){
   S.subscriptions=sorted; save(); rSub();
 }
 
-function addGoal(){
-  const n=document.getElementById('g-nm').value.trim(),t=parseFloat(document.getElementById('g-tgt').value)||0,s=parseFloat(document.getElementById('g-sv').value)||0;
-  if(!n||!t) return;
-  S.goals.push({id:Date.now(),nm:n,tgt:t,sv:s});
-  save(); rAll(); closeModal('m-goal');
-  document.getElementById('g-nm').value=''; document.getElementById('g-tgt').value=''; document.getElementById('g-sv').value='';
+let curSavType='goal';
+function pickSavType(b){
+  document.querySelectorAll('.stype').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  curSavType=b.dataset.st;
+  document.getElementById('goal-fields').style.display=curSavType==='goal'?'':'none';
+  document.getElementById('deposit-fields').style.display=curSavType==='deposit'?'':'none';
 }
-function delGoal(id){S.goals=S.goals.filter(g=>g.id!==id);save();rGoals();}
-function bump(id,v){const g=S.goals.find(x=>x.id===id);if(g){g.sv=Math.min(g.tgt,g.sv+v);save();rGoals();}}
+
+function addGoal(){
+  const n=document.getElementById('g-nm').value.trim();
+  if(!n) return;
+  if(curSavType==='deposit'){
+    const bal=parseFloat(document.getElementById('g-bal').value)||0;
+    const mat=document.getElementById('g-mat').value;
+    const notes=document.getElementById('g-notes').value.trim();
+    S.goals.push({id:Date.now(),type:'deposit',nm:n,bal,mat,notes});
+  } else {
+    const t=parseFloat(document.getElementById('g-tgt').value)||0,s=parseFloat(document.getElementById('g-sv').value)||0;
+    if(!t) return;
+    S.goals.push({id:Date.now(),type:'goal',nm:n,tgt:t,sv:s});
+  }
+  save(); rSavings(); closeModal('m-goal');
+  document.getElementById('g-nm').value='';
+  document.getElementById('g-tgt').value=''; document.getElementById('g-sv').value='';
+  document.getElementById('g-bal').value=''; document.getElementById('g-mat').value=''; document.getElementById('g-notes').value='';
+  curSavType='goal';
+  document.querySelectorAll('.stype').forEach((b,i)=>b.classList.toggle('on',i===0));
+  document.getElementById('goal-fields').style.display='';
+  document.getElementById('deposit-fields').style.display='none';
+}
+function delGoal(id){S.goals=S.goals.filter(g=>String(g.id)!==String(id));save();rSavings();}
+function bump(id,v){const g=S.goals.find(x=>String(x.id)===String(id));if(g){g.sv=Math.min(g.tgt,g.sv+v);save();rSavings();}}
+function bumpDep(id,v){const g=S.goals.find(x=>String(x.id)===String(id));if(g){g.bal=(g.bal||0)+v;save();rSavings();}}
+function setDepBal(id){const v=prompt('Enter current balance (₹):');const n=parseFloat(v);if(!isNaN(n)&&n>=0){const g=S.goals.find(x=>String(x.id)===String(id));if(g){g.bal=n;save();rSavings();}}}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Settings
@@ -878,6 +1004,7 @@ function go(t){
   document.getElementById('pane-'+cur).classList.remove('on');
   document.getElementById('nb-'+cur).classList.remove('on');
   cur=t;
+  if(t==='ov') clearDrill();
   document.getElementById('pane-'+t).classList.add('on');
   document.getElementById('nb-'+t).classList.add('on');
   document.getElementById('content').scrollTop=0;
@@ -894,7 +1021,18 @@ function openAdd(){
     document.querySelectorAll('.fq').forEach(b=>{b.classList.toggle('on',b.dataset.f==='monthly');}); curFreq='monthly';
     openModal('m-sub');
   }
-  else if(cur==='sav') openModal('m-goal');
+  else if(cur==='sav'){
+    curSavType='goal';
+    document.querySelectorAll('.stype').forEach((b,i)=>b.classList.toggle('on',i===0));
+    document.getElementById('goal-fields').style.display='';
+    document.getElementById('deposit-fields').style.display='none';
+    document.getElementById('sav-modal-title').textContent='New savings entry';
+    document.getElementById('sav-submit-btn').textContent='Add';
+    document.getElementById('g-nm').value=''; document.getElementById('g-tgt').value='';
+    document.getElementById('g-sv').value=''; document.getElementById('g-bal').value='';
+    document.getElementById('g-mat').value=''; document.getElementById('g-notes').value='';
+    openModal('m-goal');
+  }
 }
 
 function openModal(id){ document.getElementById(id).classList.add('on'); }
