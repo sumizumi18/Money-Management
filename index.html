@@ -238,6 +238,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 /* Got paid modal */
 .confirm-body .fi{margin:12px 0 4px;text-align:left}
 
+.firstrun{position:fixed;inset:0;z-index:500;background:rgba(26,26,46,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}
+.firstrun-ico{font-size:52px;margin-bottom:16px}
+.firstrun-ttl{font-size:20px;font-weight:700;color:#fff;margin-bottom:8px}
+.firstrun-sub{font-size:14px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:24px}
+.firstrun .fi{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff;margin-bottom:10px}
+.firstrun .fi::placeholder{color:rgba(255,255,255,.35)}
+.firstrun-or{font-size:12px;color:rgba(255,255,255,.35);margin:8px 0}
+.btn-ghost{width:100%;padding:12px;background:none;color:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.15);border-radius:13px;font-size:14px;cursor:pointer;margin-top:4px}
+
 .new-period-btn{width:100%;padding:12px;background:rgba(134,239,172,.12);color:var(--green);border:1.5px solid rgba(134,239,172,.3);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
 
 /* ── Month picker ── */
@@ -378,6 +387,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   </button>
 </nav>
 <button id="fab" onclick="openAdd()">+</button>
+
+<div id="firstrun" style="display:none">
+  <div class="firstrun">
+    <div class="firstrun-ico">💰</div>
+    <div class="firstrun-ttl">Welcome to Money Tracker</div>
+    <div class="firstrun-sub">Looks like this is a new device.<br>Restore your data from GitHub Gist,<br>or start fresh.</div>
+    <input class="fi" type="password" id="fr-token" placeholder="Paste your GitHub token (ghp_...)"/>
+    <input class="fi" type="text" id="fr-gist-id" placeholder="Gist ID (optional — auto-found)"/>
+    <div id="fr-status" style="font-size:12px;color:#FCA5A5;min-height:16px;margin-bottom:8px"></div>
+    <button class="btn-p" style="width:100%" onclick="firstRunRestore()">↺ Restore my data</button>
+    <div class="firstrun-or">— or —</div>
+    <button class="btn-ghost" onclick="firstRunFresh()">Start fresh on this device</button>
+  </div>
+</div>
 
 <!-- ═══ MODALS ═══ -->
 
@@ -855,6 +878,57 @@ async function restoreFromGist(){
     st.className='gist-status gist-ok';st.textContent='✓ Restored successfully';
     closeModal('m-set');
   }catch(e){st.className='gist-status gist-err';st.textContent='✗ Restore failed: '+e.message;}
+}
+
+
+// ── First-run / new device setup ─────────────────────────────────────────────
+function checkFirstRun(){
+  // Show first-run if: no local save AND no gist token saved
+  const hasLocal=localStorage.getItem('mt');
+  if(!hasLocal && !S.gistToken){
+    document.getElementById('firstrun').style.display='flex';
+  }
+}
+
+async function firstRunRestore(){
+  const token=document.getElementById('fr-token').value.trim();
+  const gistId=document.getElementById('fr-gist-id').value.trim();
+  const st=document.getElementById('fr-status');
+  if(!token){st.textContent='Paste your GitHub token first';return;}
+  st.textContent='Looking up your Gist...';
+  try{
+    // If no gist ID, search user's gists for the backup file
+    let resolvedId=gistId;
+    if(!resolvedId){
+      const listR=await fetch('https://api.github.com/gists',{headers:{'Authorization':'token '+token}});
+      if(!listR.ok){st.textContent='Invalid token — check and try again';return;}
+      const list=await listR.json();
+      const found=list.find(g=>g.files&&g.files['money-tracker-data.json']);
+      if(!found){st.textContent='No Money Tracker backup found in your Gists';return;}
+      resolvedId=found.id;
+    }
+    const r=await fetch('https://api.github.com/gists/'+resolvedId,{headers:{'Authorization':'token '+token}});
+    if(!r.ok){st.textContent='Could not load Gist — check the ID';return;}
+    const j=await r.json();
+    const content=j.files&&j.files['money-tracker-data.json']&&j.files['money-tracker-data.json'].content;
+    if(!content){st.textContent='Backup file not found in that Gist';return;}
+    const parsed=JSON.parse(content);
+    if(!parsed.expenses) parsed.expenses=[];
+    if(!parsed.categories) parsed.categories=[];
+    if(!parsed.subscriptions) parsed.subscriptions=[];
+    if(!parsed.goals) parsed.goals=[];
+    if(!parsed.periods) parsed.periods=[];
+    S=migrate(parsed);
+    S.gistToken=token; S.gistId=resolvedId;
+    save(); rAll();
+    document.getElementById('firstrun').style.display='none';
+  }catch(e){st.textContent='Error: '+e.message;}
+}
+
+function firstRunFresh(){
+  document.getElementById('firstrun').style.display='none';
+  // Save default state so first-run doesn't show again
+  save();
 }
 
 function rAll() { rHdr(); rOv(); rExp(); rSub(); rSavings(); }
@@ -1540,6 +1614,7 @@ function applySync(){
 
 // Run sync check after a short delay so app renders first
 setTimeout(checkGistSync, 1500);
+checkFirstRun();
 </script>
 </body>
 </html>
