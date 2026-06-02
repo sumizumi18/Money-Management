@@ -1,4 +1,4 @@
-const CACHE = "mt-v6";
+const CACHE = "mt-v7";
 const FILES = ["./index.html", "./manifest.json"];
 
 self.addEventListener("install", e => {
