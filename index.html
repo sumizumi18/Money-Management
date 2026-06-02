@@ -883,9 +883,12 @@ async function restoreFromGist(){
 
 // ── First-run / new device setup ─────────────────────────────────────────────
 function checkFirstRun(){
-  // Show first-run if: no local save AND no gist token saved
+  // Show first-run if: no gist token AND data looks like a blank/default state
+  // (either no localStorage at all, or localStorage exists but has no real data)
+  if(S.gistToken) return; // already connected — skip
+  const isEmpty=S.expenses.length===0 && S.subscriptions.length<=7 && !S.gistId;
   const hasLocal=localStorage.getItem('mt');
-  if(!hasLocal && !S.gistToken){
+  if(!hasLocal || isEmpty){
     document.getElementById('firstrun').style.display='flex';
   }
 }
