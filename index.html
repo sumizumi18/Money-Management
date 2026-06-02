@@ -627,11 +627,17 @@ const DEFAULT_STATE = {
 function migrate(old) {
   if (!old) return {...DEFAULT_STATE};
   if (old.categories && old.subscriptions && old.periodMode !== undefined) {
-    // Ensure new fields exist
+    // Ensure all new fields exist (forward-compat)
     if (!old.periods) old.periods=[];
     if (!old.currentPeriodIncome) old.currentPeriodIncome=old.income||72000;
     if (!old.gistToken) old.gistToken='';
     if (!old.gistId) old.gistId='';
+    // Ensure all expenses have notes/tags
+    old.expenses=(old.expenses||[]).map(e=>({notes:'',tags:[],...e}));
+    // Ensure all goals have type
+    old.goals=(old.goals||[]).map(g=>({type:'goal',...g}));
+    // Ensure all subs have order
+    old.subscriptions=(old.subscriptions||[]).map((s,i)=>({order:i,...s}));
     return old;
   }
 
@@ -933,8 +939,6 @@ function rOv() {
   b.style.width=pct+'%'; b.style.background=pct>90?'#FCA5A5':'#86EFAC';
   document.getElementById('ov-pct').textContent = pct+'% of income (incl. subs)';
   document.getElementById('ov-tgt').textContent = 'Target: '+fmt(S.savingsTarget)+' saved';
-  rBudgetChart(ct,de);
-  rHistory();
   document.getElementById('ov-period-lbl').textContent = S.periodMode
     ? fmtDate(S.periodStart)+' → today'
     : S.month;
@@ -960,6 +964,8 @@ function rOv() {
   document.getElementById('ov-sc').textContent=S.subscriptions.length+' active subscription'+(S.subscriptions.length!==1?'s':'');
   document.getElementById('ov-sa').textContent=fmt(sTot*12)+' per year';
   document.getElementById('ov-sm').textContent=fmt(sTot)+'/mo';
+  rBudgetChart(ct,de);
+  rHistory();
 }
 
 function rFilterBar() {
@@ -1436,13 +1442,21 @@ function importData(e){
   const file=e.target.files[0]; if(!file) return;
   const reader=new FileReader();
   reader.onload=evt=>{
+    let parsed;
+    try{ parsed=JSON.parse(evt.target.result); }
+    catch(err){ showBackupMsg('Could not read file: '+err.message,'#E24B4A'); return; }
     try{
-      const parsed=JSON.parse(evt.target.result);
-      if(!parsed.expenses||!parsed.categories) throw new Error('Invalid');
+      if(!parsed||typeof parsed!=='object') throw new Error('Not a JSON object');
+      if(!parsed.expenses) parsed.expenses=[];
+      if(!parsed.categories) parsed.categories=[];
+      if(!parsed.subscriptions) parsed.subscriptions=[];
+      if(!parsed.goals) parsed.goals=[];
+      if(!parsed.periods) parsed.periods=[];
       S=migrate(parsed); save(); rAll();
-      showBackupMsg('✓ Data restored successfully','var(--green)');
+      showBackupMsg('Data restored successfully','var(--green)');
+      closeModal('m-set');
     }catch(err){
-      showBackupMsg('✗ Invalid backup file — make sure you chose the right JSON file','#E24B4A');
+      showBackupMsg('Restore failed: '+err.message,'#E24B4A');
     }
   };
   reader.readAsText(file);
