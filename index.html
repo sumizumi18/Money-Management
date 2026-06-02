@@ -562,9 +562,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     <div class="ff"><label class="fl">Gist ID <span style="font-weight:400;color:var(--t3)">(auto-filled after first save)</span></label><input class="fi" type="text" id="st-gist-id" placeholder="Leave blank for new Gist"/></div>
     <div style="display:flex;gap:8px;margin-top:4px">
       <button class="btn-s" style="flex:1;margin-top:0" onclick="testGist()">Test connection</button>
+      <button class="btn-s" style="flex:1;margin-top:0" onclick="pushToGist()">⬆ Push now</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px">
       <button class="btn-s" style="flex:1;margin-top:0" onclick="restoreFromGist()">↺ Restore from Gist</button>
     </div>
     <div class="gist-status" id="gist-status"></div>
+    <div style="font-size:11px;color:var(--t3);margin-top:4px" id="gist-last-sync"></div>
   </div>
 </div>
 
@@ -826,27 +830,60 @@ function viewPeriodHistory(start, end){
 
 // ── GitHub Gist backup ────────────────────────────────────────────────────────
 let gistSaveTimer=null;
+async function pushGistNow(token, gistId, silent){
+  const body={description:'Money Tracker Backup',public:false,
+    files:{'money-tracker-data.json':{content:JSON.stringify(S,null,2)}}};
+  const method=gistId?'PATCH':'POST';
+  const url=gistId?'https://api.github.com/gists/'+gistId:'https://api.github.com/gists';
+  const resp=await fetch(url,{method,
+    headers:{'Authorization':'token '+token,'Content-Type':'application/json'},
+    body:JSON.stringify(body)});
+  if(!resp.ok){
+    const err=await resp.json().catch(()=>({message:resp.status+' '+resp.statusText}));
+    throw new Error(err.message||resp.statusText);
+  }
+  const j=await resp.json();
+  if(!gistId){
+    S.gistId=j.id;
+    localStorage.setItem('mt',JSON.stringify(S));
+    // Update settings UI if open
+    const el=document.getElementById('st-gist-id');
+    if(el) el.value=j.id;
+  }
+  localStorage.setItem('mt_last_gist',new Date().toISOString());
+  if(!silent){
+    const st=document.getElementById('gist-status');
+    if(st){st.className='gist-status gist-ok';st.textContent='✓ Saved to Gist'+(j.id?' · ID: '+j.id.slice(0,8)+'...':'');}
+    const ls=document.getElementById('gist-last-sync');
+    if(ls) ls.textContent='Last synced: just now';
+  }
+  return j.id;
+}
+
+async function pushToGist(){
+  const token=document.getElementById('st-gist-token').value.trim()||S.gistToken;
+  const gistId=document.getElementById('st-gist-id').value.trim()||S.gistId;
+  const st=document.getElementById('gist-status');
+  if(!token){st.className='gist-status gist-err';st.textContent='Enter your token first';return;}
+  st.className='gist-status';st.textContent='Pushing...';
+  // Save token/id to S first
+  S.gistToken=token; S.gistId=gistId;
+  localStorage.setItem('mt',JSON.stringify(S));
+  try{
+    await pushGistNow(token,gistId,false);
+  }catch(e){
+    st.className='gist-status gist-err';
+    st.textContent='✗ Failed: '+e.message;
+  }
+}
+
 async function autoSaveToGist(data){
   clearTimeout(gistSaveTimer);
   gistSaveTimer=setTimeout(async()=>{
     if(!data.gistToken) return;
-    try{
-      const body={description:'Money Tracker Backup — auto-save',public:false,
-        files:{'money-tracker-data.json':{content:JSON.stringify(data,null,2)}}};
-      const method=data.gistId?'PATCH':'POST';
-      const url=data.gistId
-        ?'https://api.github.com/gists/'+data.gistId
-        :'https://api.github.com/gists';
-      const resp=await fetch(url,{method,
-        headers:{'Authorization':'token '+data.gistToken,'Content-Type':'application/json'},
-        body:JSON.stringify(body)});
-      if(resp.ok){
-        const j=await resp.json();
-        if(!data.gistId){S.gistId=j.id;localStorage.setItem('mt',JSON.stringify(S));}
-        localStorage.setItem('mt_last_gist',new Date().toISOString());
-      }
-    }catch(e){console.error('Gist save failed:',e);}
-  },2000); // debounce 2s
+    try{ await pushGistNow(data.gistToken, data.gistId, true); }
+    catch(e){ console.error('Gist auto-save failed:',e.message); }
+  },2000);
 }
 
 async function testGist(){
@@ -1350,6 +1387,10 @@ function openSettings(){
   document.getElementById('st-tgt').value=S.savingsTarget;
   document.getElementById('st-gist-token').value=S.gistToken||'';
   document.getElementById('st-gist-id').value=S.gistId||'';
+  const lastGist=localStorage.getItem('mt_last_gist');
+  const lsEl=document.getElementById('gist-last-sync');
+  if(lsEl) lsEl.textContent=lastGist?'Last synced: '+new Date(lastGist).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+  const stEl=document.getElementById('gist-status'); if(stEl){stEl.textContent='';stEl.className='gist-status';}
   document.getElementById('st-ps').value=S.periodStart;
   document.getElementById('st-month').value=S.month;
   document.getElementById('seg-period').classList.toggle('on',S.periodMode);
