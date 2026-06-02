@@ -677,6 +677,7 @@ catch(e) { S = {...DEFAULT_STATE}; }
 
 function save() {
   localStorage.setItem('mt', JSON.stringify(S));
+  localStorage.setItem('mt_last_save', Date.now().toString());
   if(S.gistToken) autoSaveToGist(S);
 }
 
@@ -1474,6 +1475,71 @@ function showBackupMsg(msg,color){
 // ────────────────────────────────────────────────────────────────────────────
 rAll();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+// ── Auto-sync check on load ───────────────────────────────────────────────────
+async function checkGistSync(){
+  if(!S.gistToken||!S.gistId) return;
+  try{
+    const r=await fetch('https://api.github.com/gists/'+S.gistId,{
+      headers:{'Authorization':'token '+S.gistToken}
+    });
+    if(!r.ok) return;
+    const j=await r.json();
+    const gistUpdated=new Date(j.updated_at).getTime();
+    const lastLocal=parseInt(localStorage.getItem('mt_last_save')||'0');
+    if(gistUpdated>lastLocal+5000){ // Gist is more than 5s newer than local
+      const content=j.files&&j.files['money-tracker-data.json']&&j.files['money-tracker-data.json'].content;
+      if(!content) return;
+      showSyncBanner(gistUpdated, content);
+    }
+  }catch(e){ /* silent fail — don't interrupt the user */ }
+}
+
+let _pendingSyncContent=null;
+
+function showSyncBanner(gistTime, content){
+  _pendingSyncContent=content;
+  const existing=document.getElementById('sync-banner');
+  if(existing) existing.remove();
+  const d=new Date(gistTime).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  const banner=document.createElement('div');
+  banner.id='sync-banner';
+  banner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:999;background:#1A1A2E;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+  banner.innerHTML='<span>🔄 Newer data on Gist ('+d+')</span>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="dismissSync()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:5px 10px;border-radius:7px;font-size:12px;cursor:pointer">Dismiss</button>'
+    +'<button onclick="applySync()" style="background:#86EFAC;border:none;color:#1A1A2E;padding:5px 10px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">Sync now</button>'
+    +'</div>';
+  document.body.appendChild(banner);
+}
+
+function dismissSync(){
+  const b=document.getElementById('sync-banner'); if(b) b.remove();
+  _pendingSyncContent=null;
+  localStorage.setItem('mt_last_save', Date.now().toString());
+}
+
+function applySync(){
+  if(!_pendingSyncContent) return;
+  try{
+    const parsed=JSON.parse(_pendingSyncContent);
+    if(!parsed.expenses) parsed.expenses=[];
+    if(!parsed.categories) parsed.categories=[];
+    if(!parsed.subscriptions) parsed.subscriptions=[];
+    if(!parsed.goals) parsed.goals=[];
+    if(!parsed.periods) parsed.periods=[];
+    S=migrate(parsed);
+    save(); rAll();
+    _pendingSyncContent=null;
+    const b=document.getElementById('sync-banner'); if(b) b.remove();
+  }catch(e){ alert('Sync failed: '+e.message); }
+}
+
+// Update mt_last_save whenever we save locally
+
+
+// Run sync check after a short delay so app renders first
+setTimeout(checkGistSync, 1500);
 </script>
 </body>
 </html>
