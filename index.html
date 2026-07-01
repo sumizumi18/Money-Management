@@ -1176,7 +1176,7 @@ function pickChip(containerId, btn) {
 async function autoSync(data) {
   if(!data.syncUrl) return;
   try {
-    const r=await fetch(data.syncUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    const r=await fetch(data.syncUrl,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data)});
     if(r.ok){localStorage.setItem('mt_v3_sync_ts',Date.now().toString());}
   } catch(e){console.error('Sync failed:',e.message);}
 }
@@ -1228,7 +1228,7 @@ async function pushNow(){
   if(!url){st.className='sync-status sync-err';st.textContent='No sync URL configured';return;}
   st.textContent='Pushing...';
   try{
-    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)});
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(S)});
     if(r.ok){
       localStorage.setItem('mt_v3_sync_ts',Date.now().toString());
       st.className='sync-status sync-ok';st.textContent='✓ Pushed successfully';
